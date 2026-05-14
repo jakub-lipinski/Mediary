@@ -7,11 +7,11 @@ use Illuminate\Http\Request;
 
 class AppController extends Controller
 {
-    public function dashboard(Request $request) 
+    public function dashboard(Request $request)
     {
         $user = $request->user();
         $files = $user->files()->orderBy('created_at', 'desc')->limit(5)->get();
-        $weightsData = $user->weights()->orderBy('date', 'desc')->limit(5)->get()->sortBy('date');
+        $weightsData = $user->weights()->orderBy('date', 'desc')->limit(5)->get()->sortBy('date')->values();
         $weights = $weightsData->pluck('weight');
         $dates = $weightsData->pluck('date');
 
@@ -19,7 +19,7 @@ class AppController extends Controller
             return Carbon::parse($date)->format('d.m');
         });
 
-        $bloodData = $user->blood_pressures()->orderBy('date', 'desc')->limit(5)->get()->sortBy('date');
+        $bloodData = $user->blood_pressures()->orderBy('date', 'desc')->limit(5)->get()->sortBy('date')->values();
         $systolics = $bloodData->pluck('systolic');
         $diastolics = $bloodData->pluck('diastolic');
         $blood_dates = $bloodData->pluck('date');
@@ -38,5 +38,5 @@ class AppController extends Controller
             'last_pressure' => $last_pressure,
             'files' => $files,
         ]);
-    }    
+    }
 }

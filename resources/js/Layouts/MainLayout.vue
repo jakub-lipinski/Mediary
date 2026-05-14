@@ -19,11 +19,20 @@ onMounted(() => {
     const userMenuBtn = document.querySelector(".user-menu-button");
     const userMenu = document.querySelector(".user-menu");
     const MobileMenuOpen = document.querySelector(".mobile-menu-open");
+    const MobileMenuClose = document.querySelector(".close-sidebar");
     const mobileBackdrop = document.querySelector(".mobile-backdrop");
     const mobileMenu = document.querySelector(".mobile-menu");
     const mobileLinks = [...document.querySelectorAll(".mobile-link")];
 
-    MobileMenuOpen.addEventListener("click", () => {
+    const closeMobileMenu = () => {
+        mobileBackdrop.classList.remove("opacity-100");
+        mobileBackdrop.classList.add("opacity-0");
+        mobileBackdrop.classList.remove("h-full");
+        mobileBackdrop.classList.add("h-0");
+        mobileMenu.classList.add("-translate-x-full");
+    };
+
+    MobileMenuOpen?.addEventListener("click", () => {
         if (mobileBackdrop.classList.contains("opacity-0")) {
             mobileBackdrop.classList.remove("opacity-0");
             mobileBackdrop.classList.add("opacity-100");
@@ -41,18 +50,13 @@ onMounted(() => {
         }
     });
 
-    mobileLinks.forEach((link) => {
-        link.addEventListener("click", () => {
-            mobileBackdrop.classList.remove("opacity-100");
-            mobileBackdrop.classList.add("opacity-0");
-            mobileBackdrop.classList.remove("h-full");
-            mobileBackdrop.classList.add("h-0");
+    MobileMenuClose?.addEventListener("click", closeMobileMenu);
 
-            mobileMenu.classList.add("-translate-x-full");
-        });
+    mobileLinks.forEach((link) => {
+        link.addEventListener("click", closeMobileMenu);
     });
 
-    userMenuBtn.addEventListener("click", () => {
+    userMenuBtn?.addEventListener("click", () => {
         userMenu.classList.toggle("opacity-0");
         userMenu.classList.toggle("invisible");
         userMenu.classList.toggle("scale-95");
@@ -217,6 +221,33 @@ onMounted(() => {
                                                 ></i>
                                             </Link>
                                         </li>
+
+                                        <li>
+                                            <Link
+                                                :href="route('note.index')"
+                                                :class="{
+                                                    'bg-blue-600 text-blue-600 shadow-2xl':
+                                                        route().current(
+                                                            'note.*'
+                                                        ),
+                                                    'text-gray-600 hover:text-blue-600 hover:bg-gray-50':
+                                                        !route().current(
+                                                            'note.*'
+                                                        ),
+                                                }"
+                                                class="mobile-link flex justify-center items-center gap-x-3 rounded-full p-3 text-sm font-semibold transition-colors duration-300 size-12"
+                                            >
+                                                <i
+                                                    :class="{
+                                                        'text-white':
+                                                            route().current(
+                                                                'note.*'
+                                                            ),
+                                                    }"
+                                                    class="fa-solid fa-book-medical text-lg"
+                                                ></i>
+                                            </Link>
+                                        </li>
                                     </ul>
                                 </li>
                             </ul>
@@ -344,6 +375,27 @@ onMounted(() => {
                                                     route().current('diet.*'),
                                             }"
                                             class="fa-solid fa-utensils text-lg"
+                                        ></i>
+                                    </Link>
+                                </li>
+
+                                <li>
+                                    <Link
+                                        :href="route('note.index')"
+                                        :class="{
+                                            'bg-blue-600 text-blue-600 shadow-2xl':
+                                                route().current('note.*'),
+                                            'text-gray-600 hover:text-blue-600 hover:bg-gray-50':
+                                                !route().current('note.*'),
+                                        }"
+                                        class="flex justify-center items-center gap-x-3 rounded-full p-3 text-sm font-semibold transition-colors duration-300 size-12"
+                                    >
+                                        <i
+                                            :class="{
+                                                'text-white':
+                                                    route().current('note.*'),
+                                            }"
+                                            class="fa-solid fa-book-medical text-lg"
                                         ></i>
                                     </Link>
                                 </li>

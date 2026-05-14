@@ -1,1 +1,0 @@
-import{c as r,k as o,o as n}from"./app-Sz0-M1vj.js";const s=["type"],c={__name:"DangerButton",props:{type:{type:String,default:"button"}},setup(t){return(e,a)=>(n(),r("button",{type:t.type,class:"text-white text-sm bg-red-600 px-4 py-2 rounded-full flex justify-center items-center gap-2 duration-200 hover:bg-red-500"},[o(e.$slots,"default")],8,s))}};export{c as _};

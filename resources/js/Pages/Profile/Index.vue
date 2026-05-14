@@ -36,6 +36,7 @@ const submit = () =>
 const submitPressure = () =>
     pressureForm.post(route("blood.pressure"), {
         onSuccess: () => {
+            pressureForm.reset();
             const toastMagic = new ToastMagic();
             toastMagic.success(
                 "Gotowe!",
@@ -305,6 +306,11 @@ const formatDate = (myDate, monthFormat = "long") => {
                             class="w-full rounded-md bg-[#FFF] border-[1px] border-slate-300 p-2 text-sm"
                             v-model="pressureForm.date"
                         />
+                        <span
+                            class="text-red-500 text-xs"
+                            v-if="pressureForm.errors.date"
+                            >{{ pressureForm.errors.date }}</span
+                        >
                     </div>
                     <div
                         class="flex flex-col gap-1 w-full lg:w-[calc(33%-12px)] text-sm"
@@ -313,11 +319,16 @@ const formatDate = (myDate, monthFormat = "long") => {
                             >Ciśnienie skurczowe</label
                         >
                         <input
-                            type="text"
+                            type="number"
                             placeholder="Np. 120"
                             class="w-full rounded-md bg-[#FFF] border-[1px] border-slate-300 p-2 text-sm"
                             v-model="pressureForm.systolic"
                         />
+                        <span
+                            class="text-red-500 text-xs"
+                            v-if="pressureForm.errors.systolic"
+                            >{{ pressureForm.errors.systolic }}</span
+                        >
                     </div>
 
                     <div
@@ -332,11 +343,16 @@ const formatDate = (myDate, monthFormat = "long") => {
                             placeholder="Np. 80"
                             class="w-full rounded-md bg-[#FFF] border-[1px] border-slate-300 p-2 text-sm"
                         />
+                        <span
+                            class="text-red-500 text-xs"
+                            v-if="pressureForm.errors.diastolic"
+                            >{{ pressureForm.errors.diastolic }}</span
+                        >
                     </div>
                 </div>
                 <PrimaryButton
-                    :class="{ 'opacity-25': form.processing }"
-                    :disabled="form.processing"
+                    :class="{ 'opacity-25': pressureForm.processing }"
+                    :disabled="pressureForm.processing"
                     :type="'submit'"
                     >Dodaj</PrimaryButton
                 >

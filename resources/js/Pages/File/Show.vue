@@ -1,7 +1,7 @@
 <script setup>
 import MainLayout from "@/Layouts/MainLayout.vue";
 import PrimaryButton from "@/Components/PrimaryButton.vue";
-import { VPdfViewer } from "@vue-pdf-viewer/viewer";
+import VuePdfEmbed from "vue-pdf-embed";
 import { Link, Head } from "@inertiajs/vue3";
 
 defineOptions({
@@ -24,6 +24,8 @@ const formatDate = (date) => {
         year: "numeric",
     });
 };
+
+const fileUrl = () => "/storage/" + props.file.path;
 </script>
 
 <template>
@@ -125,7 +127,24 @@ const formatDate = (date) => {
             <div
                 class="w-full h-[600px] overflow-y-hidden border-2 rounded-xl border-gray-200"
             >
-                <VPdfViewer :src="'/storage/' + file.path" />
+                <VuePdfEmbed v-if="file.type === 'pdf'" :source="fileUrl()" />
+                <div
+                    v-else
+                    class="h-full flex flex-col justify-center items-center gap-4 text-center p-6"
+                >
+                    <i class="fa-solid fa-file-word text-5xl text-blue-600"></i>
+                    <p class="text-sm text-gray-600">
+                        Podgląd tego formatu nie jest dostępny w aplikacji.
+                    </p>
+                    <a
+                        :href="fileUrl()"
+                        target="_blank"
+                        rel="noopener"
+                        class="text-white text-sm bg-blue-600 px-4 py-2 rounded-full duration-200 hover:bg-blue-700"
+                    >
+                        Otwórz plik
+                    </a>
+                </div>
             </div>
         </div>
     </div>

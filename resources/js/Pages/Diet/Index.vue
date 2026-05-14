@@ -394,6 +394,9 @@ const submit = () =>
                     </div>
                 </ul>
             </div>
+            <p v-else class="text-sm text-gray-600">
+                Nie masz jeszcze wygenerowanych diet.
+            </p>
         </div>
     </div>
 </template>

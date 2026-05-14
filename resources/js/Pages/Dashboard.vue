@@ -194,31 +194,34 @@ const formatDate = (myDate) => {
 };
 
 onMounted(() => {
-    var chart = new ApexCharts(document.querySelector("#chart"), options);
-    chart.render();
+    const chartElement = document.querySelector("#chart");
+    if (chartElement) {
+        var chart = new ApexCharts(chartElement, options);
+        chart.render();
+    }
 
-    var chartHeart = new ApexCharts(
-        document.querySelector("#chart-heart"),
-        optionsHeart
-    );
-    chartHeart.render();
+    const chartHeartElement = document.querySelector("#chart-heart");
+    if (chartHeartElement) {
+        var chartHeart = new ApexCharts(chartHeartElement, optionsHeart);
+        chartHeart.render();
+    }
 
     const addFileBtn = document.querySelector("#add-file");
     const addFileBackground = document.querySelector("#add-file-background");
     const addFileModal = document.querySelector("#add-file-modal");
     const closeModalBtn = document.querySelector("#close-file-modal");
 
-    addFileBtn.addEventListener("click", () => {
+    addFileBtn?.addEventListener("click", () => {
         addFileModal.classList.remove("hidden");
         addFileBackground.classList.remove("hidden");
     });
 
-    closeModalBtn.addEventListener("click", () => {
+    closeModalBtn?.addEventListener("click", () => {
         addFileModal.classList.add("hidden");
         addFileBackground.classList.add("hidden");
     });
 
-    addFileBackground.addEventListener("click", () => {
+    addFileBackground?.addEventListener("click", () => {
         if (!addFileModal.classList.contains("hidden")) {
             addFileModal.classList.add("hidden");
             addFileBackground.classList.add("hidden");
@@ -272,7 +275,7 @@ onMounted(() => {
                     </label>
                 </div>
                 <p class="text-xs leading-5 text-gray-600">
-                    Pliki .pdf, .doc, .docx do 10MB
+                    Pliki .pdf, .docx do 10MB
                 </p>
                 <span class="text-xs text-red-500" v-if="form.errors.file">{{
                     form.errors.file
