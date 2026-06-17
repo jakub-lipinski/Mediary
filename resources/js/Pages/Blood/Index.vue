@@ -80,7 +80,7 @@ onMounted(() => {
     </Head>
     <div class="flex flex-wrap gap-6">
         <div
-            class="flex flex-col gap-6 w-full lg:w-[calc(50%-12px)] bg-white rounded-2xl shadow p-6 h-fit"
+            class="flex flex-col gap-6 w-full lg:w-[calc(50%-12px)] bg-white rounded-2xl shadow-xs p-6 h-fit"
         >
             <form class="w-full flex flex-col gap-6" @submit.prevent="submit">
                 <div class="flex flex-col w-full gap-6">
@@ -557,7 +557,7 @@ onMounted(() => {
 
         <!-- Zalecenia specjalisty -->
         <div
-            class="flex flex-col gap-6 w-full lg:w-[calc(50%-12px)] bg-white rounded-2xl shadow p-6 h-fit sticky lg:top-[87px]"
+            class="flex flex-col gap-6 w-full lg:w-[calc(50%-12px)] bg-white rounded-2xl shadow-xs p-6 h-fit sticky lg:top-[87px]"
         >
             <div class="flex flex-col gap-2">
                 <div class="flex gap-2 items-center">

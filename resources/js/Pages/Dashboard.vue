@@ -263,7 +263,7 @@ onMounted(() => {
                 >
                     <label
                         for="file"
-                        class="relative cursor-pointer text-center rounded-md bg-white font-semibold duration-200 text-blue-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-600 focus-within:ring-offset-2 hover:text-blue-500"
+                        class="relative cursor-pointer text-center rounded-md bg-white font-semibold duration-200 text-blue-600 focus-within:outline-hidden focus-within:ring-2 focus-within:ring-blue-600 focus-within:ring-offset-2 hover:text-blue-500"
                     >
                         <span class="text-sm">Wybierz plik z urządzenia</span>
                         <input
@@ -304,7 +304,7 @@ onMounted(() => {
             class="flex flex-col w-full xl:w-2/3 lg:flex-row items-start flex-wrap gap-6"
         >
             <div
-                class="w-full h-fit lg:w-[calc(50%-12px)] flex bg-white shadow rounded-2xl p-4 flex-col gap-2"
+                class="w-full h-fit lg:w-[calc(50%-12px)] flex bg-white shadow-xs rounded-2xl p-4 flex-col gap-2"
             >
                 <div class="flex gap-2 items-center">
                     <div
@@ -346,7 +346,7 @@ onMounted(() => {
                 </div>
             </div>
             <div
-                class="w-full lg:w-[calc(50%-12px)] h-fit flex bg-white shadow rounded-2xl p-4 flex-col gap-2"
+                class="w-full lg:w-[calc(50%-12px)] h-fit flex bg-white shadow-xs rounded-2xl p-4 flex-col gap-2"
             >
                 <div class="flex gap-2 items-center">
                     <div
@@ -381,7 +381,7 @@ onMounted(() => {
                 </div>
             </div>
             <div
-                class="w-full h-fit flex bg-white shadow rounded-2xl p-4 flex-col gap-2 mt-0"
+                class="w-full h-fit flex bg-white shadow-xs rounded-2xl p-4 flex-col gap-2 mt-0"
             >
                 <div class="flex gap-2 items-center">
                     <div
@@ -414,7 +414,7 @@ onMounted(() => {
         </div>
         <div class="flex w-full xl:w-1/3">
             <div
-                class="w-full flex bg-white shadow rounded-2xl p-4 flex-col gap-2"
+                class="w-full flex bg-white shadow-xs rounded-2xl p-4 flex-col gap-2"
             >
                 <div class="flex gap-2 items-center">
                     <div
@@ -440,7 +440,7 @@ onMounted(() => {
                     >
                         <!-- Ikona -->
                         <div
-                            class="flex-shrink-0 size-12 rounded-2xl bg-gray-100 flex justify-center items-center"
+                            class="shrink-0 size-12 rounded-2xl bg-gray-100 flex justify-center items-center"
                         >
                             <i
                                 v-if="file.type == 'doc'"
@@ -453,7 +453,7 @@ onMounted(() => {
                         </div>
 
                         <!-- Nazwa i rozmiar -->
-                        <div class="flex-grow flex flex-col overflow-hidden">
+                        <div class="grow flex flex-col overflow-hidden">
                             <Link
                                 :href="route('file.show', file.id)"
                                 class="text-base font-normal mb-0 break-words"
@@ -471,7 +471,7 @@ onMounted(() => {
                         </div>
 
                         <!-- Opcje -->
-                        <!-- <div class="ml-2 flex-shrink-0">
+                        <!-- <div class="ml-2 shrink-0">
                             <button class="text-gray-600">
                                 <i class="fa-solid fa-ellipsis"></i>
                             </button>

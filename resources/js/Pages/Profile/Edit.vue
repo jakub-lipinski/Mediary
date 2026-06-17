@@ -25,21 +25,21 @@ defineProps({
     <div>
         <div class="flex flex-col items-stretch gap-6">
             <div
-                class="w-full h-fit flex bg-white shadow rounded-2xl p-4 flex-col gap-2"
+                class="w-full h-fit flex bg-white shadow-xs rounded-2xl p-4 flex-col gap-2"
                 v-if="$page.props.jetstream.canUpdateProfileInformation"
             >
                 <UpdateProfileInformationForm :user="$page.props.auth.user" />
             </div>
 
             <div
-                class="w-full h-fit flex bg-white shadow rounded-2xl p-4 flex-col gap-2"
+                class="w-full h-fit flex bg-white shadow-xs rounded-2xl p-4 flex-col gap-2"
                 v-if="$page.props.jetstream.canUpdatePassword"
             >
                 <UpdatePasswordForm class="mt-10 sm:mt-0" />
             </div>
 
             <div
-                class="w-full h-fit flex bg-white shadow rounded-2xl p-4 flex-col gap-2"
+                class="w-full h-fit flex bg-white shadow-xs rounded-2xl p-4 flex-col gap-2"
                 v-if="$page.props.jetstream.canManageTwoFactorAuthentication"
             >
                 <TwoFactorAuthenticationForm
@@ -50,15 +50,15 @@ defineProps({
 
             <LogoutOtherBrowserSessionsForm
                 :sessions="sessions"
-                class="w-full h-fit flex bg-white shadow rounded-2xl p-4 flex-col gap-2"
+                class="w-full h-fit flex bg-white shadow-xs rounded-2xl p-4 flex-col gap-2"
             />
 
             <template
-                class="w-full h-fit flex bg-white shadow rounded-2xl p-4 flex-col gap-2"
+                class="w-full h-fit flex bg-white shadow-xs rounded-2xl p-4 flex-col gap-2"
                 v-if="$page.props.jetstream.hasAccountDeletionFeatures"
             >
                 <DeleteUserForm
-                    class="w-full h-fit flex bg-white shadow rounded-2xl p-4 flex-col gap-2"
+                    class="w-full h-fit flex bg-white shadow-xs rounded-2xl p-4 flex-col gap-2"
                 />
             </template>
         </div>

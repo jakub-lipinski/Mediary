@@ -6,7 +6,7 @@ const props = defineProps({
 
 <template>
     <div
-        class="w-full h-fit flex bg-white shadow rounded-2xl p-4 flex-col gap-2"
+        class="w-full h-fit flex bg-white shadow-xs rounded-2xl p-4 flex-col gap-2"
         :class="{
             'lg:w-[calc(50%-12px)]': props.width === 'half',
             'xl:w-1/3': props.width === 'third',

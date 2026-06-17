@@ -67,7 +67,7 @@ const formatDate = (myDate, monthFormat = "long") => {
     <div class="columns-1 lg:columns-2 gap-6 break-inside-avoid">
         <!-- Podstawowe dane -->
         <div
-            class="flex flex-col gap-6 bg-white rounded-2xl shadow p-6 mb-6 break-inside-avoid"
+            class="flex flex-col gap-6 bg-white rounded-2xl shadow-xs p-6 mb-6 break-inside-avoid"
         >
             <div class="flex flex-col gap-2">
                 <div class="flex gap-2 items-center">
@@ -204,7 +204,7 @@ const formatDate = (myDate, monthFormat = "long") => {
 
         <!-- Dokumentacja medyczna -->
         <div
-            class="flex flex-col gap-6 bg-white rounded-2xl shadow border-slate-300 p-6 mb-6 break-inside-avoid"
+            class="flex flex-col gap-6 bg-white rounded-2xl shadow-xs border-slate-300 p-6 mb-6 break-inside-avoid"
         >
             <div class="flex flex-col gap-2">
                 <div class="flex gap-2 items-center">
@@ -229,7 +229,7 @@ const formatDate = (myDate, monthFormat = "long") => {
             >
                 <!-- Ikona -->
                 <div
-                    class="flex-shrink-0 size-12 rounded-2xl bg-gray-100 flex justify-center items-center"
+                    class="shrink-0 size-12 rounded-2xl bg-gray-100 flex justify-center items-center"
                 >
                     <i
                         v-if="file.type == 'doc'"
@@ -242,7 +242,7 @@ const formatDate = (myDate, monthFormat = "long") => {
                 </div>
 
                 <!-- Nazwa i rozmiar -->
-                <div class="flex-grow flex flex-col overflow-hidden">
+                <div class="grow flex flex-col overflow-hidden">
                     <Link
                         :href="route('file.show', file.id)"
                         class="text-base font-normal mb-0 break-words"
@@ -260,7 +260,7 @@ const formatDate = (myDate, monthFormat = "long") => {
                 </div>
 
                 <!-- Opcje -->
-                <div class="ml-2 flex-shrink-0">
+                <div class="ml-2 shrink-0">
                     <button class="text-gray-600">
                         <i class="fa-solid fa-ellipsis"></i>
                     </button>
@@ -270,7 +270,7 @@ const formatDate = (myDate, monthFormat = "long") => {
 
         <!-- Pomiar ciśnienia -->
         <div
-            class="flex flex-col gap-6 bg-white rounded-2xl shadow border-slate-300 p-6 break-inside-avoid"
+            class="flex flex-col gap-6 bg-white rounded-2xl shadow-xs border-slate-300 p-6 break-inside-avoid"
         >
             <div class="flex flex-col gap-2">
                 <div class="flex gap-2 items-center">

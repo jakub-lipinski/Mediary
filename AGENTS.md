@@ -21,12 +21,11 @@ This application is a Laravel application and its main Laravel ecosystems packag
 - laravel/boost (BOOST) - v2
 - laravel/mcp (MCP) - v0
 - laravel/pint (PINT) - v1
-- laravel/sail (SAIL) - v1
 - phpunit/phpunit (PHPUNIT) - v12
-- vue (VUE) - v3
 - @inertiajs/vue3 (INERTIA_VUE) - v2
 - alpinejs (ALPINEJS) - v3
-- tailwindcss (TAILWINDCSS) - v3
+- tailwindcss (TAILWINDCSS) - v4
+- vue (VUE) - v3
 
 ## Skills Activation
 

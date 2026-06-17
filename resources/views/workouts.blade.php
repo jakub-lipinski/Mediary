@@ -188,7 +188,7 @@
             <div class="flex flex-wrap gap-4">
                 @forelse($workouts as $workout)
                 <div
-                    class="workout w-full border-[1px] border-slate-200 p-4 rounded-md flex flex-col gap-4 shadow-sm"
+                    class="workout w-full border-[1px] border-slate-200 p-4 rounded-md flex flex-col gap-4 shadow-xs"
                 >
                     <h2 class="text-lg font-semibold text-blue-600">
                         {{ $workout->workout_name }}
@@ -249,7 +249,7 @@
                 </div>
                 @empty @endforelse @forelse($trashedWorkouts as $workout)
                 <div
-                    class="deleted-workout w-full border-[1px] border-slate-200 p-4 rounded-md flex flex-col gap-4 shadow-sm hidden"
+                    class="deleted-workout w-full border-[1px] border-slate-200 p-4 rounded-md flex flex-col gap-4 shadow-xs hidden"
                 >
                     <h2 class="text-lg font-semibold text-blue-600">
                         {{ $workout->workout_name }}

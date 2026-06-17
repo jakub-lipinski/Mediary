@@ -185,7 +185,7 @@
             <div class="flex flex-wrap gap-4">
                 @forelse($diets as $diet)
                 <div
-                    class="diet w-full border-[1px] border-slate-200 p-4 rounded-md flex flex-col gap-4 shadow-sm"
+                    class="diet w-full border-[1px] border-slate-200 p-4 rounded-md flex flex-col gap-4 shadow-xs"
                 >
                     <h2 class="text-lg font-semibold text-blue-600">
                         {{ $diet->diet_name }}
@@ -283,7 +283,7 @@
                 </div>
                 @empty @endforelse @forelse($trashedDiets as $diet)
                 <div
-                    class="deleted-diet w-full border-[1px] border-slate-200 p-4 rounded-md flex flex-col gap-4 shadow-sm hidden"
+                    class="deleted-diet w-full border-[1px] border-slate-200 p-4 rounded-md flex flex-col gap-4 shadow-xs hidden"
                 >
                     <h2 class="text-lg font-semibold text-blue-600">
                         {{ $diet->diet_name }}

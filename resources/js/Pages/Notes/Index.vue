@@ -45,7 +45,7 @@ const formatDate = (date) =>
 
     <div class="columns-1 lg:columns-2 gap-6 break-inside-avoid">
         <div
-            class="flex flex-col gap-6 bg-white rounded-2xl shadow p-6 mb-6 break-inside-avoid"
+            class="flex flex-col gap-6 bg-white rounded-2xl shadow-xs p-6 mb-6 break-inside-avoid"
         >
             <div class="flex flex-col gap-2">
                 <div class="flex gap-2 items-center">
@@ -200,7 +200,7 @@ const formatDate = (date) =>
         </div>
 
         <div
-            class="flex flex-col gap-6 bg-white rounded-2xl shadow p-6 mb-6 break-inside-avoid"
+            class="flex flex-col gap-6 bg-white rounded-2xl shadow-xs p-6 mb-6 break-inside-avoid"
         >
             <div class="flex flex-col gap-2">
                 <h4 class="text-2xl font-normal">Historia wpisów</h4>

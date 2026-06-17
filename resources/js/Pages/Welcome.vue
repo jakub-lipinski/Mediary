@@ -2,10 +2,9 @@
 import { Link } from "@inertiajs/vue3";
 import { onMounted, computed } from "vue";
 import Swiper from "swiper";
-import { Navigation, Pagination } from "swiper/modules";
+import { Pagination } from "swiper/modules";
 import { Head, usePage } from "@inertiajs/vue3";
 import "swiper/css";
-import "swiper/css/navigation";
 import "swiper/css/pagination";
 
 const page = usePage();
