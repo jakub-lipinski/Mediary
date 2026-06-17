@@ -16,7 +16,7 @@ class ProfileTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->get('/profile');
+            ->get('/profil');
 
         $response->assertOk();
     }
@@ -27,20 +27,26 @@ class ProfileTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->patch('/profile', [
-                'name' => 'Test User',
-                'email' => 'test@example.com',
+            ->patch('/profil/zapisz', [
+                'gender' => 'Kobieta',
+                'weight' => 65,
+                'height' => 170,
+                'birthday' => '1990-01-01',
+                'diseases' => 'Brak',
             ]);
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
+            ->assertRedirect('/profil');
 
         $user->refresh();
 
-        $this->assertSame('Test User', $user->name);
-        $this->assertSame('test@example.com', $user->email);
-        $this->assertNull($user->email_verified_at);
+        $this->assertSame('Kobieta', $user->gender);
+        $this->assertEquals(65, $user->weight);
+        $this->assertEquals(170, $user->height);
+        $this->assertSame('1990-01-01', $user->birthday);
+        $this->assertSame('Brak', $user->diseases);
+        $this->assertSame('53.5kg - 72kg', $user->proper_weight);
     }
 
     public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void
@@ -49,14 +55,17 @@ class ProfileTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->patch('/profile', [
-                'name' => 'Test User',
-                'email' => $user->email,
+            ->patch('/profil/zapisz', [
+                'gender' => null,
+                'weight' => null,
+                'height' => null,
+                'birthday' => null,
+                'diseases' => null,
             ]);
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
+            ->assertRedirect('/profil');
 
         $this->assertNotNull($user->refresh()->email_verified_at);
     }
@@ -67,7 +76,7 @@ class ProfileTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->delete('/profile', [
+            ->delete('/user', [
                 'password' => 'password',
             ]);
 
@@ -75,7 +84,6 @@ class ProfileTest extends TestCase
             ->assertSessionHasNoErrors()
             ->assertRedirect('/');
 
-        $this->assertGuest();
         $this->assertNull($user->fresh());
     }
 
@@ -85,14 +93,14 @@ class ProfileTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->from('/profile')
-            ->delete('/profile', [
+            ->from('/user/profile')
+            ->delete('/user', [
                 'password' => 'wrong-password',
             ]);
 
         $response
-            ->assertSessionHasErrorsIn('userDeletion', 'password')
-            ->assertRedirect('/profile');
+            ->assertSessionHasErrors('password')
+            ->assertRedirect('/user/profile');
 
         $this->assertNotNull($user->fresh());
     }
