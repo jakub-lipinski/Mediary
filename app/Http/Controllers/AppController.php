@@ -2,40 +2,32 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Inertia\Response;
 
 class AppController extends Controller
 {
-    public function dashboard(Request $request)
+    public function dashboard(Request $request): Response
     {
         $user = $request->user();
-        $files = $user->files()->orderBy('created_at', 'desc')->limit(5)->get();
-        $weightsData = $user->weights()->orderBy('date', 'desc')->limit(5)->get()->sortBy('date')->values();
+        $files = $user->files()->latest()->limit(5)->get();
+        $weightsData = $user->weights()->latest('date')->limit(5)->get()->sortBy('date')->values();
         $weights = $weightsData->pluck('weight');
-        $dates = $weightsData->pluck('date');
+        $dates = $weightsData->pluck('date')->map(fn ($date): string => $date->format('d.m'));
 
-        $dates = $dates->map(function ($date) {
-            return Carbon::parse($date)->format('d.m');
-        });
-
-        $bloodData = $user->blood_pressures()->orderBy('date', 'desc')->limit(5)->get()->sortBy('date')->values();
+        $bloodData = $user->bloodPressures()->latest('date')->limit(5)->get()->sortBy('date')->values();
         $systolics = $bloodData->pluck('systolic');
         $diastolics = $bloodData->pluck('diastolic');
-        $blood_dates = $bloodData->pluck('date');
-        $last_pressure = $user->blood_pressures()->orderBy('date', 'desc')->first();
-
-        $blood_dates = $blood_dates->map(function ($date) {
-            return Carbon::parse($date)->format('d.m');
-        });
+        $bloodDates = $bloodData->pluck('date')->map(fn ($date): string => $date->format('d.m'));
+        $lastPressure = $user->bloodPressures()->latest('date')->first();
 
         return Inertia('Dashboard', [
             'weights' => $weights,
             'dates' => $dates,
             'systolics' => $systolics,
             'diastolics' => $diastolics,
-            'blood_dates' => $blood_dates,
-            'last_pressure' => $last_pressure,
+            'blood_dates' => $bloodDates,
+            'last_pressure' => $lastPressure,
             'files' => $files,
         ]);
     }

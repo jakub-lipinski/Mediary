@@ -3,16 +3,13 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use App\Models\Diet;
-use App\Models\File;
-use App\Models\Note;
-use App\Models\Weight;
-use Laravel\Sanctum\HasApiTokens;
-use Laravel\Jetstream\HasProfilePhoto;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Jetstream\HasProfilePhoto;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
@@ -35,40 +32,40 @@ class User extends Authenticatable
         'weight',
         'birthday',
         'age',
-        'gender', 
-        'diseases', 
-        'wbc', 
-        'rbc', 
-        'hgb', 
-        'hct', 
-        'mcv', 
-        'mch', 
-        'mchc', 
-        'plt', 
-        'rdw_sd', 
+        'gender',
+        'diseases',
+        'wbc',
+        'rbc',
+        'hgb',
+        'hct',
+        'mcv',
+        'mch',
+        'mchc',
+        'plt',
+        'rdw_sd',
         'rdw_cv',
-        'pdw', 
-        'mpv', 
-        'p_lcr', 
-        'pct', 
+        'pdw',
+        'mpv',
+        'p_lcr',
+        'pct',
         'neu',
-        'lym', 
-        'mono', 
-        'eos', 
-        'baso', 
-        'tsh', 
-        'ast', 
-        'alt', 
+        'lym',
+        'mono',
+        'eos',
+        'baso',
+        'tsh',
+        'ast',
+        'alt',
         'bilirubin',
-        'alp', 
+        'alp',
         'ggtp',
-        'total_cholesterol', 
+        'total_cholesterol',
         'hdl_cholesterol',
-        'non_hdl_cholesterol', 
-        'ldl_cholesterol', 
+        'non_hdl_cholesterol',
+        'ldl_cholesterol',
         'triglycerides',
-        'blood_recommendations', 
-        'proper_weight', 
+        'blood_recommendations',
+        'proper_weight',
         'proper_pressure',
     ];
 
@@ -103,26 +100,37 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'birthday' => 'date:Y-m-d',
         ];
     }
 
-    public function weights() {
+    public function weights(): HasMany
+    {
         return $this->hasMany(Weight::class);
     }
 
-    public function blood_pressures() {
+    public function bloodPressures(): HasMany
+    {
         return $this->hasMany(BloodPressure::class);
     }
 
-    public function files() {
+    public function blood_pressures(): HasMany
+    {
+        return $this->bloodPressures();
+    }
+
+    public function files(): HasMany
+    {
         return $this->hasMany(File::class);
     }
 
-    public function diets() {
+    public function diets(): HasMany
+    {
         return $this->hasMany(Diet::class);
     }
 
-    public function notes() {
+    public function notes(): HasMany
+    {
         return $this->hasMany(Note::class);
     }
 }

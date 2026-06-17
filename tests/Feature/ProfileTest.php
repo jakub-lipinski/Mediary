@@ -44,7 +44,7 @@ class ProfileTest extends TestCase
         $this->assertSame('Kobieta', $user->gender);
         $this->assertEquals(65, $user->weight);
         $this->assertEquals(170, $user->height);
-        $this->assertSame('1990-01-01', $user->birthday);
+        $this->assertSame('1990-01-01', $user->birthday->toDateString());
         $this->assertSame('Brak', $user->diseases);
         $this->assertSame('53.5kg - 72kg', $user->proper_weight);
     }

@@ -2,35 +2,35 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Profile\UpdateHealthProfileRequest;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Redirect;
+use Inertia\Response;
 use Laravel\Fortify\Features;
 
 class ProfileController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): Response
     {
         $user = $request->user();
 
-        $blood_pressures = Cache::rememberForever('blood_pressures_'.$user->id, function () use ($user) {
-            return $user->blood_pressures()->orderBy('date', 'asc')->get();
+        $bloodPressures = Cache::rememberForever('blood_pressures_'.$user->id, function () use ($user) {
+            return $user->bloodPressures()->oldest('date')->get();
         });
 
         $files = Cache::rememberForever('files_'.$user->id, function () use ($user) {
-            return $user->files()->orderBy('created_at', 'desc')->get();
+            return $user->files()->latest()->get();
         });
 
         return Inertia('Profile/Index', [
-            'blood_pressures' => $blood_pressures,
+            'blood_pressures' => $bloodPressures,
             'files' => $files,
         ]);
     }
 
-    public function edit(Request $request)
+    public function edit(Request $request): Response
     {
         $user = $request->user();
 
@@ -41,15 +41,9 @@ class ProfileController extends Controller
         ]);
     }
 
-    public function update(Request $request)
+    public function update(UpdateHealthProfileRequest $request): RedirectResponse
     {
-        $data = $request->validate([
-            'gender' => 'nullable|string',
-            'weight' => 'nullable|numeric|min:1|max:500',
-            'height' => 'nullable|numeric|min:30|max:260',
-            'birthday' => 'nullable|date|before:today',
-            'diseases' => 'nullable|string',
-        ]);
+        $data = $request->validated();
 
         $data['age'] = filled($data['birthday'] ?? null)
             ? Carbon::parse($data['birthday'])->age
@@ -60,7 +54,7 @@ class ProfileController extends Controller
 
         if (filled($data['weight'] ?? null)) {
             $user->weights()->updateOrCreate(
-                ['date' => Carbon::today()],
+                ['date' => today()],
                 [
                     'weight' => $data['weight'],
                 ]
@@ -79,15 +73,5 @@ class ProfileController extends Controller
         $user->save();
 
         return redirect()->route('profile.index');
-    }
-
-    // User logout
-    public function destroy(Request $request)
-    {
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        return Redirect::to('/');
     }
 }

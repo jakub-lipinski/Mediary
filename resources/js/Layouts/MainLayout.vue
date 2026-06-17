@@ -513,7 +513,7 @@ onMounted(() => {
                                     <!-- Active: "bg-gray-50", Not Active: "" -->
                                     <Link
                                         :href="route('profile.edit')"
-                                        class="block px-3 py-1 text-sm leading-6 text-gray-900 hover:bg-gray-50 {{ request()->routeIs('profile.show') ? 'bg-gray-50' : '' }}"
+                                        class="block px-3 py-1 text-sm leading-6 text-gray-900 hover:bg-gray-50"
                                         role="menuitem"
                                         tabindex="-1"
                                         id="user-menu-item-0"

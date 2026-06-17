@@ -2,41 +2,33 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Diet\StoreDietRequest;
 use App\Models\Diet;
-use App\Models\DietDay;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Inertia\Response;
 
 class DietController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): Response
     {
         return Inertia('Diet/Index', [
-            'diets' => $request->user()->diets()->with('days')->get(),
+            'diets' => $request->user()->diets()->with([
+                'days' => fn ($query) => $query->orderBy('id'),
+            ])->latest()->get(),
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreDietRequest $request): RedirectResponse
     {
         $user = $request->user();
+        $data = $request->validated();
+        $apiKey = config('services.openai.key');
 
-        $data = $request->validate([
-            'name' => 'required|max:64',
-            'type' => ['required', Rule::in(['klasyczna', 'wegetariańska', 'wegańska', 'bezglutenowa'])],
-            'calories' => ['required', 'integer', Rule::in([1000, 1500, 2000, 2500])],
-            'meals' => ['required', 'integer', Rule::in([3, 4, 5])],
-            'like' => 'nullable|string|max:1000',
-            'dislike' => 'nullable|string|max:1000',
-            'notes' => 'nullable|string|max:2000',
-            'documents' => 'boolean',
-        ]);
-
-        $api_key = config('services.openai.key');
-
-        if (blank($api_key)) {
+        if (blank($apiKey)) {
             throw ValidationException::withMessages([
                 'name' => 'Generowanie diety jest chwilowo niedostępne.',
             ]);
@@ -84,10 +76,7 @@ class DietController extends Controller
 
         $input .= ' Nie dodawaj żadnych swoich podsumowań, zwróć tylko dietę. Posiłki powinny być zróżnicowane na przestrzeni całego tygodnia. Posiłki muszą być pełnoprawnymi daniami. Nie twórz prostych połączeń typu jabłko z masłem orzechowym. Pamiętaj o wpisaniu w nawiasie przy każdym posiłku gramatury każdego produktu potrzebnego do wykonania dania.';
 
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer '.$api_key,
-            'Content-Type' => 'application/json',
-        ])->timeout(60)->post('https://api.openai.com/v1/responses', [
+        $response = Http::acceptJson()->withToken($apiKey)->timeout(60)->post('https://api.openai.com/v1/responses', [
             'model' => 'gpt-4o-mini',
             'input' => $input,
         ])->json();
@@ -108,45 +97,44 @@ class DietController extends Controller
             ]);
         }
 
-        $diet = $user->diets()->create([
-            'name' => $data['name'],
-            'type' => $data['type'],
-            'calories' => $data['calories'],
-            'meals' => $data['meals'],
-            'like' => $data['like'] ?? null,
-            'dislike' => $data['dislike'] ?? null,
-            'notes' => $data['notes'] ?? null,
-            'documents' => $data['documents'] ?? false,
-            'user_id' => $user->id,
-        ]);
+        DB::transaction(function () use ($data, $parsed, $user): void {
+            $diet = $user->diets()->create([
+                'name' => $data['name'],
+                'type' => $data['type'],
+                'calories' => $data['calories'],
+                'meals' => $data['meals'],
+                'like' => $data['like'] ?? null,
+                'dislike' => $data['dislike'] ?? null,
+                'notes' => $data['notes'] ?? null,
+                'documents' => $data['documents'] ?? false,
+            ]);
 
-        foreach ($parsed as $day) {
-            if (! is_array($day) || ! isset($day['day'], $day['protein'], $day['fat'], $day['carbohydrates'], $day['content'])) {
-                $diet->delete();
+            foreach ($parsed as $day) {
+                if (! is_array($day) || ! isset($day['day'], $day['protein'], $day['fat'], $day['carbohydrates'], $day['content'])) {
+                    throw ValidationException::withMessages([
+                        'name' => 'Wygenerowana dieta ma niepełne dane. Spróbuj ponownie.',
+                    ]);
+                }
 
-                throw ValidationException::withMessages([
-                    'name' => 'Wygenerowana dieta ma niepełne dane. Spróbuj ponownie.',
+                $diet->days()->create([
+                    'day' => $day['day'],
+                    'protein' => $day['protein'],
+                    'fat' => $day['fat'],
+                    'carbohydrates' => $day['carbohydrates'],
+                    'content' => $this->sanitizeGeneratedHtml($day['content']),
                 ]);
             }
-
-            DietDay::create([
-                'diet_id' => $diet->id,
-                'day' => $day['day'],
-                'protein' => $day['protein'],
-                'fat' => $day['fat'],
-                'carbohydrates' => $day['carbohydrates'],
-                'content' => $day['content'],
-            ]);
-        }
+        });
 
         return redirect()->back()->with('success', 'Dieta stworzona pomyślnie.');
     }
 
-    public function destroy(Diet $diet)
+    public function destroy(Request $request, Diet $diet): RedirectResponse
     {
-        $user = Auth::user();
-        $user->diets()->where('id', $diet->id)->delete();
+        abort_unless($diet->user()->is($request->user()), 403);
 
-        return redirect()->back()->with('success', 'Dieta usunieta pomyślnie.');
+        $diet->delete();
+
+        return redirect()->back()->with('success', 'Dieta usunięta pomyślnie.');
     }
 }

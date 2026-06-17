@@ -1,1 +1,0 @@
-import{c as e,t as o,k as n,o as t}from"./app-B_vm46ZD.js";const l={class:"text-gray-600 text-xs"},r={key:0},c={key:1},p={__name:"InputLabel",props:{value:String},setup(s){return(a,_)=>(t(),e("label",l,[s.value?(t(),e("span",r,o(s.value),1)):(t(),e("span",c,[n(a.$slots,"default")]))]))}};export{p as _};

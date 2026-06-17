@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Diet extends Model
@@ -21,15 +23,21 @@ class Diet extends Model
         'notes',
         'documents',
         'user_id',
-        'content',
     ];
 
-    public function user()
+    protected function casts(): array
+    {
+        return [
+            'documents' => 'boolean',
+        ];
+    }
+
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function days()
+    public function days(): HasMany
     {
         return $this->hasMany(DietDay::class);
     }
