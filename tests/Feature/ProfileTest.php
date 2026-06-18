@@ -2,8 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\BloodPressure;
+use App\Models\File as UserFile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class ProfileTest extends TestCase
@@ -19,6 +22,51 @@ class ProfileTest extends TestCase
             ->get('/profil');
 
         $response->assertOk();
+    }
+
+    public function test_profile_lists_are_returned_as_indexed_arrays(): void
+    {
+        $user = User::factory()->create();
+
+        UserFile::create([
+            'filename' => 'results.pdf',
+            'path' => 'files/'.$user->id.'/results.pdf',
+            'size' => '1.23',
+            'type' => 'pdf',
+            'review' => '',
+            'user_id' => $user->id,
+        ]);
+
+        BloodPressure::create([
+            'systolic' => '120',
+            'diastolic' => '80',
+            'date' => today(),
+            'review' => 'OK',
+            'user_id' => $user->id,
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/profil');
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Profile/Index')
+            ->has('files.0.id')
+            ->has('blood_pressures.0.id'));
+    }
+
+    public function test_profile_edit_page_includes_authenticated_user_props(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/profil/edytuj');
+
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Profile/Edit')
+            ->where('auth.user.id', $user->id)
+            ->where('user.id', $user->id));
     }
 
     public function test_profile_information_can_be_updated(): void

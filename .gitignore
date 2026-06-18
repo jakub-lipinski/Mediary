@@ -21,6 +21,7 @@ yarn-error.log
 /.vscode
 .DS_Store
 .codex
-.agents
+.agentsz4
 AGENTS.md
 boost.json
+.agents

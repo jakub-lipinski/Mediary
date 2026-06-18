@@ -6,7 +6,6 @@ use App\Http\Requests\Profile\UpdateHealthProfileRequest;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Inertia\Response;
 use Laravel\Fortify\Features;
 
@@ -16,17 +15,9 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        $bloodPressures = Cache::rememberForever('blood_pressures_'.$user->id, function () use ($user) {
-            return $user->bloodPressures()->oldest('date')->get();
-        });
-
-        $files = Cache::rememberForever('files_'.$user->id, function () use ($user) {
-            return $user->files()->latest()->get();
-        });
-
         return Inertia('Profile/Index', [
-            'blood_pressures' => $bloodPressures,
-            'files' => $files,
+            'blood_pressures' => $user->bloodPressures()->oldest('date')->get()->values(),
+            'files' => $user->files()->latest()->get()->values(),
         ]);
     }
 

@@ -32,6 +32,9 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
+            'auth' => [
+                'user' => $request->user(),
+            ],
             'ziggy' => fn () => [
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),
@@ -39,6 +42,5 @@ class HandleInertiaRequests extends Middleware
             'user' => $request->user(),
             'app_url' => config('app.url'),
         ];
-       
     }
 }
