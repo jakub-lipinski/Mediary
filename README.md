@@ -1,66 +1,96 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Mediary
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Mediary to aplikacja webowa pomagająca uporządkować podstawowe informacje zdrowotne: wyniki badań, pomiary ciśnienia, wagę, dokumentację medyczną i plany żywieniowe. Projekt łączy panel użytkownika z automatycznym podsumowywaniem danych, ale główny nacisk pozostaje na czytelność, historię pomiarów i wygodną pracę z własnymi informacjami.
 
-## About Laravel
+> Aplikacja ma charakter informacyjny i organizacyjny. Nie zastępuje konsultacji medycznej ani diagnozy specjalisty.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Funkcje
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- profil zdrowotny użytkownika: wiek, wzrost, waga, płeć i choroby przewlekłe;
+- zapisywanie oraz analiza wyników badań krwi;
+- dziennik pomiarów ciśnienia i wagi;
+- przesyłanie dokumentów medycznych w formacie PDF lub DOCX;
+- podgląd i podsumowania przesłanych plików;
+- generowanie tygodniowych planów żywieniowych na podstawie profilu, preferencji i dokumentacji;
+- notatki zdrowotne;
+- logowanie standardowe, Google OAuth, 2FA i tokeny API.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Stack
 
-## Learning Laravel
+- Laravel 13, PHP 8.4
+- Inertia.js 2 + Vue 3
+- Tailwind CSS 4
+- Laravel Jetstream, Fortify i Sanctum
+- Laravel AI SDK dla agentów analizujących dane
+- MySQL, database cache/session/queue
+- PHPUnit 12
+- Vite SSR build
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Wymagania
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+- PHP 8.4
+- Composer
+- Node.js i npm
+- MySQL
+- Laravel Herd lub równoważne lokalne środowisko
+- Klucz `OPENAI_API_KEY`, jeśli funkcje analizy i generowania mają działać lokalnie
+- Dane OAuth Google, jeśli używasz logowania przez Google
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Uruchomienie lokalne
 
-## Laravel Sponsors
+```bash
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+php artisan storage:link
+npm run dev
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Domyślnie projekt jest przygotowany pod Herd i adres:
 
-### Premium Partners
+```text
+https://mediary.test
+```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+Najważniejsze zmienne środowiskowe:
 
-## Contributing
+```env
+APP_URL=https://mediary.test
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=mediary
+OPENAI_API_KEY=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URL=https://mediary.test/auth/google/callback
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Praca z aplikacją
 
-## Code of Conduct
+Po rejestracji użytkownik uzupełnia profil zdrowotny, a następnie może dodawać pomiary, wyniki badań i pliki. Dane z profilu są wykorzystywane jako kontekst przy tworzeniu podsumowań oraz planów żywieniowych.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Moduły analityczne działają przez dedykowanych agentów w `app/Ai/Agents`. Odpowiedzi są zwracane jako structured output, a HTML wygenerowany przez model jest dodatkowo czyszczony przed zapisem.
 
-## Security Vulnerabilities
+## Testy i formatowanie
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+vendor/bin/pint --dirty --format agent
+php artisan test --compact
+```
 
-## License
+Testy funkcji korzystających z agentów używają fake'ów Laravel AI SDK, dzięki czemu nie wykonują prawdziwych zapytań do zewnętrznych usług.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Build produkcyjny
+
+```bash
+npm run build
+```
+
+Komenda buduje frontend oraz SSR bundle przez Vite.
+
+## Bezpieczeństwo danych
+
+Projekt blokuje przesyłanie plików zawierających oczywiste dane wrażliwe, takie jak PESEL, oraz odrzuca dokumenty, które nie wyglądają na medyczne. Mimo tego w środowiskach innych niż lokalne warto traktować konfigurację storage, logów i kopii zapasowych jako część bezpieczeństwa aplikacji.
