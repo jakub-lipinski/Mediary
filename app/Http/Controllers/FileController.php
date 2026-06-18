@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Ai\Agents\MedicalFileClassifier;
+use App\Ai\Agents\MedicalFileReviewer;
 use App\Http\Requests\File\StoreMedicalFileRequest;
 use App\Models\File;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Inertia\Response;
@@ -38,30 +40,22 @@ class FileController extends Controller
             ]);
         }
 
-        $apiKey = config('services.openai.key');
-        $this->ensureOpenAiKey($apiKey);
+        $classification = MedicalFileClassifier::make()
+            ->prompt($this->medicalFileClassificationPrompt($text))['classification'] ?? null;
 
-        $checkText = Http::acceptJson()->withToken($apiKey)->timeout(60)->post('https://api.openai.com/v1/responses', [
-            'model' => 'gpt-4o-mini',
-            'input' => 'Oceń, czy przesłana treść pliku ma jakikolwiek związek z medycyną. Jeśli tak - zwróć true, jeśli nie - false. Jeśli w pliku znajdują się jakieś dane typu: PESEL czy inne dane bardzo wrażliwe, zwróć - rodo. Czyli twoja odpowiedź może składać się tylko z jednego z tych trzech słów (true, false, rodo), absolutnie nic więcej. Treść pliku: '.$text,
-        ]);
-
-        $checkText = trim(data_get($checkText->json(), 'output.0.content.0.text', ''));
-
-        if ($checkText !== 'true') {
+        if ($classification !== 'medical') {
             throw ValidationException::withMessages([
-                'file' => $checkText === 'rodo'
+                'file' => $classification === 'sensitive'
                     ? 'Plik zawiera wrażliwe dane osobowe.'
                     : 'Plik nie zawiera treści medycznych.',
             ]);
         }
 
-        $response = Http::acceptJson()->withToken($apiKey)->timeout(60)->post('https://api.openai.com/v1/responses', [
-            'model' => 'gpt-4o-mini',
-            'input' => 'Jesteś wykształconym lekarzem, otrzymujesz dokument od pacjenta. Pacjent ma '.$user->age.' lat, waży '.$user->weight.' kg i ma '.$user->height.' cm wzrostu. Płeć pacjenta to '.$user->gender.'. Stwierdzone choroby pacjenta to: '.$user->diseases.'. Jeśli chorób nie ma to nie bierz ich pod uwagę. Treść przesłanego dokumentu: '.$text.'. Napisz podsumowanie (około 150 słów) na podstawie treści przesłanego dokumentu. Podsumowanie zapisz w języku polskim. Do akapitów używaj tylko tagów html <p></p> (podziel swoją odpowiedź na 2/3 akapity dla lepszej czytelności). Ważne informacje, nazwy możesz zawierać w tagach <b></b>. Nie pisz swoich zaleceń. Pisz tylko suche fakty wynikające z pliku oraz profilu pacjenta. Zwracaj się do pacjenta na "ty".',
-        ]);
+        $response = MedicalFileReviewer::make()->prompt(
+            $this->medicalFileReviewPrompt($user, $text),
+        );
 
-        $review = $this->sanitizeGeneratedHtml(data_get($response->json(), 'output.0.content.0.text'), ['p', 'br', 'b', 'strong']);
+        $review = $this->sanitizeGeneratedHtml($response['html'] ?? null, ['p', 'br', 'b', 'strong']);
 
         if (blank($review)) {
             throw ValidationException::withMessages([
@@ -111,13 +105,20 @@ class FileController extends Controller
         return redirect()->route('dashboard')->with('success', 'Plik usunięty pomyślnie.');
     }
 
-    private function ensureOpenAiKey(?string $apiKey): void
+    private function medicalFileClassificationPrompt(string $text): string
     {
-        if (blank($apiKey)) {
-            throw ValidationException::withMessages([
-                'file' => 'Analiza pliku jest chwilowo niedostępna.',
-            ]);
-        }
+        return 'Sklasyfikuj treść pliku pod kątem medyczności i danych wrażliwych. Treść pliku: '.$text;
+    }
+
+    private function medicalFileReviewPrompt(User $user, string $text): string
+    {
+        return implode(' ', [
+            'Przygotuj podsumowanie dokumentu medycznego.',
+            'Profil pacjenta: wiek '.$user->age.' lat, waga '.$user->weight.' kg, wzrost '.$user->height.' cm, płeć '.$user->gender.'.',
+            'Stwierdzone choroby pacjenta: '.($user->diseases ?: 'brak danych').'.',
+            'Nie dodawaj informacji, których nie ma w dokumencie lub profilu pacjenta.',
+            'Treść dokumentu: '.$text,
+        ]);
     }
 
     private function extractText(UploadedFile $file): string

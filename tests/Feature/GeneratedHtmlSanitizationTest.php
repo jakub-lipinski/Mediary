@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Ai\Agents\DietPlanGenerator;
 use App\Models\DietDay;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class GeneratedHtmlSanitizationTest extends TestCase
@@ -14,21 +14,15 @@ class GeneratedHtmlSanitizationTest extends TestCase
 
     public function test_generated_diet_html_is_sanitized_before_storage(): void
     {
-        Http::fake([
-            'api.openai.com/v1/responses' => Http::response([
-                'output' => [[
-                    'content' => [[
-                        'text' => json_encode([[
-                            'day' => 'Poniedziałek',
-                            'protein' => 120,
-                            'fat' => 70,
-                            'carbohydrates' => 220,
-                            'content' => '<ul onclick="alert(1)"><li><script>alert(1)</script><b style="color:red">Śniadanie:</b> Owsianka</li></ul>',
-                        ]]),
-                    ]],
-                ]],
-            ]),
-        ]);
+        DietPlanGenerator::fake([[
+            'days' => [[
+                'day' => 'Poniedziałek',
+                'protein' => 120,
+                'fat' => 70,
+                'carbohydrates' => 220,
+                'content' => '<ul onclick="alert(1)"><li><script>alert(1)</script><b style="color:red">Śniadanie:</b> Owsianka</li></ul>',
+            ]],
+        ]])->preventStrayPrompts();
 
         $user = User::factory()->create([
             'age' => '35',
@@ -51,5 +45,10 @@ class GeneratedHtmlSanitizationTest extends TestCase
         $content = DietDay::query()->sole()->content;
 
         $this->assertSame('<ul><li><b>Śniadanie:</b> Owsianka</li></ul>', $content);
+
+        DietPlanGenerator::assertPrompted(
+            fn ($prompt): bool => str_contains($prompt->prompt, 'Typ diety: klasyczna.')
+                && str_contains($prompt->prompt, 'pełne dania')
+        );
     }
 }

@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Ai\Agents\DietPlanGenerator;
 use App\Http\Requests\Diet\StoreDietRequest;
 use App\Models\Diet;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
 use Inertia\Response;
 
@@ -26,78 +27,19 @@ class DietController extends Controller
     {
         $user = $request->user();
         $data = $request->validated();
-        $apiKey = config('services.openai.key');
+        $response = DietPlanGenerator::make()->prompt(
+            $this->dietPlanPrompt($user, $data),
+        );
 
-        if (blank($apiKey)) {
-            throw ValidationException::withMessages([
-                'name' => 'Generowanie diety jest chwilowo niedostępne.',
-            ]);
-        }
+        $days = $response['days'] ?? null;
 
-        // Input building
-        $input = 'Przyjmij rolę dietetyka. Otrzymujesz informacje od swojego klienta i musisz stworzyć dla niego plan żywieniowy, rozpisać posiłki na cały tydzień. Typ diety to: '.$data['type'].'. Ilość kalorii: '.$data['calories'].'. Ilość posiłków w ciągu dnia: '.$data['meals'].'. Klient ma '.$user->age.' lat, ma '.$user->height.'cm wzrostu i waży '.$user->weight.'kg.';
-
-        if ($user->diseases) {
-            $input .= ' Klient ma stwierdzone następujące choroby: '.$user->diseases.'.';
-        }
-
-        if (filled($data['like'] ?? null)) {
-            $input .= ' Klient lubi jeść: '.$data['like'].'. Natomiast nie dodawaj tego przesadnie dużo.';
-        }
-
-        if (filled($data['dislike'] ?? null)) {
-            $input .= ' Klient nie lubi jeść: '.$data['dislike'].'. Tego nie dodawaj do diety wcale.';
-        }
-
-        if (filled($data['notes'] ?? null)) {
-            $input .= ' Klient podał również dodatkowe informacje: '.$data['notes'].'.';
-        }
-
-        if ($data['documents'] ?? false) {
-            $reviews = $user->files()->whereNotNull('review')->pluck('review')->all();
-
-            if (! empty($reviews)) {
-                $input .= ' Klient przesłał również jego dokumentację medyczną, oto opinie specjalisty na ich temat: '.implode('; ', $reviews).'.';
-            }
-        }
-
-        $input .= 'Twoja odpowiedź musi być w formie json, bez użycia ``` lub Markdown. Format
-        [
-        {
-            "day" : Dzień tygodnia,
-            "protein" : liczba,
-            "fat" : liczba,
-            "carbohydrates" : liczba,
-            "content": Dieta w formacie html, <ul><li><b>Nazwa posiłku:</b> Treść posiłku (gramatura użytych produktów) - ilosc kalorii.</li></ul>
-        }
-        ]';
-
-        $input .= ' Dni tygodnia to: Poniedziałek, Wtorek, Środa, Czwartek, Piątek, Sobota, Niedziela. Nazwy posiłku nadaj w zależności od ilości posiłków w ciągu dnia. Jeśli klient wybrał 5, to: Śniadanie, Drugie śniadanie, Obiad, Podwieczorek, Kolacja. Jeśli 4 to: Sniadanie, Obiad, Podwieczorek, Kolacja. Jeśli 3 to: Sniadanie, Obiad, Kolacja.';
-
-        $input .= ' Nie dodawaj żadnych swoich podsumowań, zwróć tylko dietę. Posiłki powinny być zróżnicowane na przestrzeni całego tygodnia. Posiłki muszą być pełnoprawnymi daniami. Nie twórz prostych połączeń typu jabłko z masłem orzechowym. Pamiętaj o wpisaniu w nawiasie przy każdym posiłku gramatury każdego produktu potrzebnego do wykonania dania.';
-
-        $response = Http::acceptJson()->withToken($apiKey)->timeout(60)->post('https://api.openai.com/v1/responses', [
-            'model' => 'gpt-4o-mini',
-            'input' => $input,
-        ])->json();
-
-        $content = data_get($response, 'output.0.content.0.text');
-
-        if (blank($content)) {
-            throw ValidationException::withMessages([
-                'name' => 'Nie udało się wygenerować diety. Spróbuj ponownie później.',
-            ]);
-        }
-
-        $parsed = json_decode($content, true);
-
-        if (! is_array($parsed)) {
+        if (! is_array($days) || $days === []) {
             throw ValidationException::withMessages([
                 'name' => 'Odpowiedź generatora diety była niepoprawna. Spróbuj ponownie.',
             ]);
         }
 
-        DB::transaction(function () use ($data, $parsed, $user): void {
+        DB::transaction(function () use ($data, $days, $user): void {
             $diet = $user->diets()->create([
                 'name' => $data['name'],
                 'type' => $data['type'],
@@ -109,7 +51,7 @@ class DietController extends Controller
                 'documents' => $data['documents'] ?? false,
             ]);
 
-            foreach ($parsed as $day) {
+            foreach ($days as $day) {
                 if (! is_array($day) || ! isset($day['day'], $day['protein'], $day['fat'], $day['carbohydrates'], $day['content'])) {
                     throw ValidationException::withMessages([
                         'name' => 'Wygenerowana dieta ma niepełne dane. Spróbuj ponownie.',
@@ -117,11 +59,11 @@ class DietController extends Controller
                 }
 
                 $diet->days()->create([
-                    'day' => $day['day'],
-                    'protein' => $day['protein'],
-                    'fat' => $day['fat'],
-                    'carbohydrates' => $day['carbohydrates'],
-                    'content' => $this->sanitizeGeneratedHtml($day['content']),
+                    'day' => (string) $day['day'],
+                    'protein' => (int) $day['protein'],
+                    'fat' => (int) $day['fat'],
+                    'carbohydrates' => (int) $day['carbohydrates'],
+                    'content' => $this->sanitizeGeneratedHtml((string) $day['content']),
                 ]);
             }
         });
@@ -136,5 +78,48 @@ class DietController extends Controller
         $diet->delete();
 
         return redirect()->back()->with('success', 'Dieta usunięta pomyślnie.');
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function dietPlanPrompt(User $user, array $data): string
+    {
+        $parts = [
+            'Utwórz tygodniowy plan żywieniowy dla klienta.',
+            'Typ diety: '.$data['type'].'.',
+            'Kalorie dziennie: '.$data['calories'].'.',
+            'Liczba posiłków dziennie: '.$data['meals'].'.',
+            'Profil klienta: wiek '.$user->age.' lat, wzrost '.$user->height.' cm, waga '.$user->weight.' kg.',
+        ];
+
+        if ($user->diseases) {
+            $parts[] = 'Stwierdzone choroby: '.$user->diseases.'.';
+        }
+
+        if (filled($data['like'] ?? null)) {
+            $parts[] = 'Klient lubi jeść: '.$data['like'].'. Uwzględnij to z umiarem.';
+        }
+
+        if (filled($data['dislike'] ?? null)) {
+            $parts[] = 'Klient nie lubi jeść: '.$data['dislike'].'. Nie dodawaj tych produktów.';
+        }
+
+        if (filled($data['notes'] ?? null)) {
+            $parts[] = 'Dodatkowe informacje od klienta: '.$data['notes'].'.';
+        }
+
+        if ($data['documents'] ?? false) {
+            $reviews = $user->files()->whereNotNull('review')->pluck('review')->all();
+
+            if ($reviews !== []) {
+                $parts[] = 'Kontekst z dokumentacji medycznej: '.implode('; ', $reviews).'.';
+            }
+        }
+
+        $parts[] = 'Nazwy posiłków zależą od liczby posiłków. Dla 5: Śniadanie, Drugie śniadanie, Obiad, Podwieczorek, Kolacja. Dla 4: Śniadanie, Obiad, Podwieczorek, Kolacja. Dla 3: Śniadanie, Obiad, Kolacja.';
+        $parts[] = 'W każdym dniu zaplanuj pełne dania możliwe do przygotowania w domu. Makroskładniki mają być spójne z kalorycznością, ale mogą być rozsądnym przybliżeniem.';
+
+        return implode(' ', $parts);
     }
 }

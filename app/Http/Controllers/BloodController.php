@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Ai\Agents\BloodPressureReviewer;
+use App\Ai\Agents\BloodResultsReviewer;
 use App\Http\Requests\Blood\StoreBloodPressureRequest;
 use App\Http\Requests\Blood\UpdateBloodResultsRequest;
+use App\Models\User;
 use Devrabiul\ToastMagic\Facades\ToastMagic;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
 use Inertia\Response;
 
@@ -23,20 +25,11 @@ class BloodController extends Controller
         $user = $request->user();
         $data = $request->validated();
 
-        $apiKey = config('services.openai.key');
+        $response = BloodResultsReviewer::make()->prompt(
+            $this->bloodResultsPrompt($user, $data),
+        );
 
-        if (blank($apiKey)) {
-            throw ValidationException::withMessages([
-                'wbc' => 'Analiza wyników jest chwilowo niedostępna.',
-            ]);
-        }
-
-        $response = Http::acceptJson()->withToken($apiKey)->timeout(60)->post('https://api.openai.com/v1/responses', [
-            'model' => 'gpt-4o-mini',
-            'input' => 'Jesteś wykształconym lekarzem, otrzymujesz wyniki badania krwi i parametry pacjenta i musisz mu pomóc. Mam '.$user->age.' lata, ważę '.$user->weight.' kg i mam '.$user->height.' cm wzrostu. Moja płeć to '.$user->gender.'. Oto moje badania i parametry: '.json_encode($data).'. Podaj dokładne podsumowanie (Musi być około 75 słów pierwszego akapitu podsumowania). Zacznij od pogrubionego słowa "Podsumowanie". Każde odchylenia od normy dokładnie wytłumacz dotyczące moich wyników badań krwi w kontekście mojego wieku, wzrostu, wagi i płci. Następnie wypisz lekarzy specjalistów (ich nazwy niech są pogrubione), do jakich mam się udać wraz z krótkim uzasadnieniem (każde uzasadnienie po około 25/30 słów). Nic więcej nie pisz oprócz tego. Jeśli wszystkie wyniki są w normie, zasugeruj tylko wizytę u lekarza pierwszego kontaktu. Odpowiedź musi być w formie HTML. Odpowiedź ma być w takiej dokładnie formie: <p><b>Podsumowanie</b>: Podsumowanie </p><br> <ul class="flex flex-col gap-2"><li><b>Lekarz n</b>: Uzasadnienie n</li> <li><b>Lekarz n+1</b>: Uzasadnienie n+1</li> <li></li></ul>. n to na początku 1, wypisz tyle lekarzy ile trzeba, jeśli trzeba dwóch to tylko dwóch, jeśli trzeba pięciu to wypisz pięciu, a jeśli czterech to czterech - chodzi o to, żebyś wypisał tyle lekarzy ile faktycznie trzeba. Nie dodawaj żadnych swoich styli. Wypisuj rzeczywiste nazwy lekarzy, nie pisz wymyślonych nazw oraz nie pisz "lekarz 1", "lekarz 2" itd. Jeśli wszystko jest w normie, to jako specjalistę zaproponuj chociaż lekarza pierwszego kontaktu w celu systematycznej kontroli. Odpowiedz w języku polskim.',
-        ]);
-
-        $data['blood_recommendations'] = $this->sanitizeGeneratedHtml(data_get($response->json(), 'output.0.content.0.text'));
+        $data['blood_recommendations'] = $this->sanitizeGeneratedHtml($response['html'] ?? null);
 
         if (blank($data['blood_recommendations'])) {
             throw ValidationException::withMessages([
@@ -58,20 +51,11 @@ class BloodController extends Controller
 
         $otherPressures = $user->bloodPressures()->where('date', '!=', $data['date'])->get(['systolic', 'diastolic', 'date']);
 
-        $apiKey = config('services.openai.key');
+        $response = BloodPressureReviewer::make()->prompt(
+            $this->bloodPressurePrompt($user, $data, $otherPressures->toArray()),
+        );
 
-        if (blank($apiKey)) {
-            throw ValidationException::withMessages([
-                'systolic' => 'Analiza ciśnienia jest chwilowo niedostępna.',
-            ]);
-        }
-
-        $response = Http::acceptJson()->withToken($apiKey)->timeout(60)->post('https://api.openai.com/v1/responses', [
-            'model' => 'gpt-4o-mini',
-            'input' => 'Jesteś wykształconym lekarzem, otrzymujesz pomiar ciśnienia krwi i na tej podstawie oraz ogólnych parametrach pacjenta musisz wystawić krótką opinię. Mam '.$user->age.' lata, ważę '.$user->weight.' kg i mam '.$user->height.' cm wzrostu. Moja płeć to '.$user->gender.'. Oto moje badania i parametry: '.json_encode($data).'. Podaj bardzo krótką opinię na temat mojego ciśnienia krwi (maksymalnie 15 słów). Moje ciśnienie krwi to: '.$data['systolic'].'/'.$data['diastolic'].'. Moje wczesniejsze pomiary to (skurczowe, rozkurczowe, data): '.json_encode($otherPressures).'. Weź pod uwagę wcześniejsze moje pomiary ciśnienia. Jeśli ciśnienie jest prawidłowe, zawsze napisz "Ciśnienie prawidłowe, brak wskazań do obaw." Jeśli coś jest nieprawidłowo, napisz dokładnie co i którego parametru dotyczy. W opinii uwzględnij inne pomiary ciśnienia. Nie pisz o konieczności konsultacji z lekarzem. W odpowiedzi nie powtarzaj wyniku.',
-        ]);
-
-        $data['review'] = strip_tags((string) data_get($response->json(), 'output.0.content.0.text'));
+        $data['review'] = trim(strip_tags((string) ($response['review'] ?? '')));
 
         if (blank($data['review'])) {
             throw ValidationException::withMessages([
@@ -84,5 +68,34 @@ class BloodController extends Controller
         Cache::forget('blood_pressures_'.$user->id);
 
         return redirect()->back();
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function bloodResultsPrompt(User $user, array $data): string
+    {
+        return implode(' ', [
+            'Przygotuj analizę wyników badań krwi dla pacjenta.',
+            'Profil pacjenta: wiek '.$user->age.' lat, waga '.$user->weight.' kg, wzrost '.$user->height.' cm, płeć '.$user->gender.'.',
+            'Wyniki badań i parametry: '.json_encode($data, JSON_UNESCAPED_UNICODE).'.',
+            'Analizuj tylko wartości obecne w danych wejściowych. Nie zakładaj jednostek ani norm, jeśli nie wynikają z danych.',
+            'Pierwszy akapit podsumowania powinien mieć około 75 słów. Uzasadnienia specjalistów powinny mieć około 25-30 słów każde.',
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @param  array<int, array<string, mixed>>  $otherPressures
+     */
+    private function bloodPressurePrompt(User $user, array $data, array $otherPressures): string
+    {
+        return implode(' ', [
+            'Przygotuj krótką opinię o pomiarze ciśnienia krwi.',
+            'Profil pacjenta: wiek '.$user->age.' lat, waga '.$user->weight.' kg, wzrost '.$user->height.' cm, płeć '.$user->gender.'.',
+            'Aktualny pomiar: '.json_encode($data, JSON_UNESCAPED_UNICODE).'.',
+            'Poprzednie pomiary: '.json_encode($otherPressures, JSON_UNESCAPED_UNICODE).'.',
+            'Jeśli poprzednie pomiary nie zmieniają oceny, skup się tylko na aktualnym pomiarze.',
+        ]);
     }
 }
