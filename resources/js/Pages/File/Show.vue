@@ -25,7 +25,7 @@ const formatDate = (date) => {
     });
 };
 
-const fileUrl = () => "/storage/" + props.file.path;
+const fileUrl = () => props.file.content_url;
 </script>
 
 <template>

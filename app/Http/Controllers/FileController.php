@@ -16,6 +16,7 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Response;
 use Smalot\PdfParser\Parser;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class FileController extends Controller
 {
@@ -70,15 +71,21 @@ class FileController extends Controller
             $type = 'doc';
         }
 
-        $path = $file->store('files/'.$user->id, 'public');
+        $path = $file->store('files/'.$user->id, 'medical');
 
-        $user->files()->create([
-            'path' => $path,
-            'filename' => $filename,
-            'type' => $type,
-            'size' => $size,
-            'review' => $review,
-        ]);
+        try {
+            $user->files()->create([
+                'path' => $path,
+                'filename' => $filename,
+                'type' => $type,
+                'size' => $size,
+                'review' => $review,
+            ]);
+        } catch (\Throwable $exception) {
+            Storage::disk('medical')->delete($path);
+
+            throw $exception;
+        }
 
         Cache::forget('files_'.$user->id);
 
@@ -90,8 +97,36 @@ class FileController extends Controller
         Gate::authorize('view', $file);
 
         return Inertia('File/Show', [
-            'file' => $file,
+            'file' => [
+                'id' => $file->id,
+                'filename' => $file->filename,
+                'size' => $file->size,
+                'type' => $file->type,
+                'review' => $file->review,
+                'created_at' => $file->created_at,
+                'content_url' => route('file.content', $file),
+            ],
         ]);
+    }
+
+    public function content(File $file): StreamedResponse
+    {
+        Gate::authorize('view', $file);
+
+        abort_unless(Storage::disk('medical')->exists($file->path), 404);
+
+        $headers = [
+            'Cache-Control' => 'private, no-store, max-age=0',
+            'Pragma' => 'no-cache',
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "sandbox; default-src 'none'",
+        ];
+
+        if ($file->type === 'pdf') {
+            return Storage::disk('medical')->response($file->path, $file->filename, $headers);
+        }
+
+        return Storage::disk('medical')->download($file->path, $file->filename, $headers);
     }
 
     public function destroy(Request $request, File $file): RedirectResponse
@@ -99,7 +134,7 @@ class FileController extends Controller
         $user = $request->user();
         Gate::authorize('delete', $file);
 
-        Storage::disk('public')->delete($file->path);
+        Storage::disk('medical')->delete($file->path);
         $file->delete();
         Cache::forget('files_'.$user->id);
 

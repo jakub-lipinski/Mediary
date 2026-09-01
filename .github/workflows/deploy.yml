@@ -38,6 +38,7 @@ jobs:
 
             # Laravel
             php artisan migrate --force
+            php artisan medical-files:migrate-private --no-interaction
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache

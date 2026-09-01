@@ -98,7 +98,7 @@ class AiCommunicationTest extends TestCase
 
     public function test_medical_file_upload_is_classified_and_reviewed_with_ai_sdk_agents(): void
     {
-        Storage::fake('public');
+        Storage::fake('medical');
 
         MedicalFileClassifier::fake([[
             'classification' => 'medical',
@@ -131,7 +131,8 @@ class AiCommunicationTest extends TestCase
             $medicalFile->review,
         );
 
-        Storage::disk('public')->assertExists($medicalFile->path);
+        Storage::disk('medical')->assertExists($medicalFile->path);
+        $this->assertSame('doc', $medicalFile->type);
 
         MedicalFileClassifier::assertPrompted(
             fn ($prompt): bool => str_contains($prompt->prompt, 'Morfologia krwi')

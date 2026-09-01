@@ -44,7 +44,6 @@ npm install
 cp .env.example .env
 php artisan key:generate
 php artisan migrate
-php artisan storage:link
 npm run dev
 ```
 
@@ -73,6 +72,12 @@ GOOGLE_REDIRECT_URL=https://mediary.test/auth/google/callback
 Po rejestracji użytkownik uzupełnia profil zdrowotny, a następnie może dodawać pomiary, wyniki badań i pliki. Dane z profilu są wykorzystywane jako kontekst przy tworzeniu podsumowań oraz planów żywieniowych.
 
 Moduły analityczne działają przez dedykowanych agentów w `app/Ai/Agents`. Odpowiedzi są zwracane jako structured output, a HTML wygenerowany przez model jest dodatkowo czyszczony przed zapisem.
+
+Dokumenty medyczne są przechowywane poza publicznym katalogiem. Po aktualizacji istniejącej instalacji uruchom jednorazowo:
+
+```bash
+php artisan medical-files:migrate-private
+```
 
 ## Testy i formatowanie
 

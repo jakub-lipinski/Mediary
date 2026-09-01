@@ -56,6 +56,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
     Route::controller(FileController::class)->group(function () {
         Route::get('/plik/{file:id}', 'show')->name('file.show');
+        Route::get('/plik/{file:id}/tresc', 'content')->name('file.content');
         Route::post('/przeslij-plik', 'store')->middleware('throttle:medical-files')->name('file.store');
         Route::delete('/usun-plik/{file:id}', 'destroy')->name('file.destroy');
     });
