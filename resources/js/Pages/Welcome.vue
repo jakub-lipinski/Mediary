@@ -120,7 +120,7 @@ onMounted(() => {
                     </li>
                     <li class="desktop-nav__option">
                         <a
-                            href="mailto:kontakt@mediary.pl"
+                            href="mailto:kontakt@lipinskijakub.pl"
                             class="desktop-nav__link"
                             >Kontakt</a
                         >
@@ -184,7 +184,7 @@ onMounted(() => {
                     </li>
                     <li class="mobile-nav__option">
                         <a
-                            href="mailto:kontakt@mediary.pl"
+                            href="mailto:kontakt@lipinskijakub.pl"
                             class="mobile-nav__link"
                             >Kontakt</a
                         >
@@ -814,13 +814,6 @@ onMounted(() => {
                                 >Opinie</a
                             >
                         </li>
-                        <li class="footer__option">
-                            <a
-                                href="mailto:kontakt@mediary.pl"
-                                class="footer__link"
-                                >Kontakt</a
-                            >
-                        </li>
                     </ul>
                 </div>
                 <div class="footer__column">
@@ -837,7 +830,7 @@ onMounted(() => {
                         <li class="footer__option">
                             <a
                                 target="_blank"
-                                href="https://github.com/Jakub017/Healthcare-AI"
+                                href="https://github.com/jakub-lipinski/mediary"
                                 class="footer__link"
                                 >Repozytorium Github</a
                             >
@@ -848,13 +841,6 @@ onMounted(() => {
                 <div class="footer__column">
                     <h6 class="footer__heading">Kontakt</h6>
                     <ul class="footer__menu">
-                        <li class="footer__option">
-                            <a
-                                href="mailto:kontakt@mediary.pl"
-                                class="footer__link"
-                                >kontakt@mediary.pl</a
-                            >
-                        </li>
                         <li class="footer__option">
                             <a
                                 href="mailto:kontakt@lipinskijakub.pl"
@@ -885,7 +871,7 @@ onMounted(() => {
                         ></a>
                         <a
                             target="_blank"
-                            href="https://github.com/Jakub017"
+                            href="https://github.com/jakub-lipinski"
                             class="footer__social"
                             ><i class="fa-brands fa-github"></i
                         ></a>
