@@ -28,6 +28,8 @@ class Diet extends Model
     protected function casts(): array
     {
         return [
+            'calories' => 'integer',
+            'meals' => 'integer',
             'documents' => 'boolean',
         ];
     }

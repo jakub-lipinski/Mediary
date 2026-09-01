@@ -20,8 +20,8 @@ class StoreBloodPressureRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'systolic' => ['required', 'numeric', 'min:40', 'max:300'],
-            'diastolic' => ['required', 'numeric', 'min:30', 'max:200'],
+            'systolic' => ['required', 'integer', 'min:40', 'max:300'],
+            'diastolic' => ['required', 'integer', 'min:30', 'max:200'],
             'date' => ['required', 'date'],
         ];
     }

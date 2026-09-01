@@ -55,7 +55,7 @@ class InertiaDataPrivacyTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->has('user', fn (Assert $userProps) => $userProps
                     ->where('name', $user->name)
-                    ->where('weight', '72.5')
+                    ->where('weight', '72.50')
                     ->has('proper_weight')
                     ->has('blood_recommendations')
                     ->missing('email')

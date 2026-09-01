@@ -47,7 +47,7 @@ class AiCommunicationTest extends TestCase
 
         BloodResultsReviewer::assertPrompted(
             fn ($prompt): bool => str_contains($prompt->prompt, '"wbc":5.5')
-                && str_contains($prompt->prompt, '"age":"35"')
+                && str_contains($prompt->prompt, '"age":35')
                 && str_contains($prompt->prompt, '<untrusted_user_data>')
         );
     }

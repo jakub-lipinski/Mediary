@@ -21,6 +21,10 @@ class Note extends Model
     protected function casts(): array
     {
         return [
+            'energy_level' => 'integer',
+            'stress_level' => 'integer',
+            'sleep_hours' => 'decimal:2',
+            'water_intake' => 'decimal:2',
             'date' => 'date:Y-m-d',
         ];
     }

@@ -21,6 +21,8 @@ class BloodPressure extends Model
     protected function casts(): array
     {
         return [
+            'systolic' => 'integer',
+            'diastolic' => 'integer',
             'date' => 'date:Y-m-d',
         ];
     }

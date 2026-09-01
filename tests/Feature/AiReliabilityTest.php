@@ -34,7 +34,7 @@ class AiReliabilityTest extends TestCase
                 'wbc' => 'Usługa analizy wyników jest chwilowo niedostępna. Spróbuj ponownie później.',
             ]);
 
-        $this->assertSame('4.8', $user->fresh()->wbc);
+        $this->assertSame('4.800', $user->fresh()->wbc);
     }
 
     public function test_malformed_diet_response_is_not_persisted(): void

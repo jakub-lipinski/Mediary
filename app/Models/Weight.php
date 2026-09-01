@@ -19,6 +19,7 @@ class Weight extends Model
     protected function casts(): array
     {
         return [
+            'weight' => 'decimal:2',
             'date' => 'date:Y-m-d',
         ];
     }

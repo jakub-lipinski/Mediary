@@ -12,6 +12,13 @@ class File extends Model
 
     protected $fillable = ['filename', 'path', 'size', 'type', 'review', 'user_id'];
 
+    protected function casts(): array
+    {
+        return [
+            'size' => 'decimal:2',
+        ];
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

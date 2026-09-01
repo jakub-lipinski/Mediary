@@ -53,7 +53,12 @@ class UpdateBloodResultsRequest extends FormRequest
     public function rules(): array
     {
         return collect(self::FIELDS)
-            ->mapWithKeys(fn (string $field): array => [$field => ['nullable', 'numeric']])
+            ->mapWithKeys(fn (string $field): array => [$field => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:9999999.999',
+            ]])
             ->all();
     }
 }
