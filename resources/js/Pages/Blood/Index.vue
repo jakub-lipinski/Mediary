@@ -557,36 +557,51 @@ onMounted(() => {
 
         <!-- Zalecenia specjalisty -->
         <div
-            class="flex flex-col gap-6 w-full lg:w-[calc(50%-12px)] bg-white rounded-2xl shadow-xs p-6 h-fit sticky lg:top-[87px]"
+            class="flex flex-col gap-4 w-full lg:w-[calc(50%-12px)] bg-white rounded-2xl shadow-xs p-6 h-fit sticky lg:top-[87px] border border-slate-100"
         >
-            <div class="flex flex-col gap-2">
-                <div class="flex gap-2 items-center">
-                    <div
-                        class="flex justify-center items-center bg-blue-200 size-12 rounded-2xl"
-                    >
-                        <i
-                            class="fa-solid fa-user-doctor text-blue-600 text-xl"
-                        ></i>
-                    </div>
-                    <h4 class="text-2xl font-normal">
+            <div class="flex gap-3 items-center">
+                <div
+                    class="flex justify-center items-center bg-emerald-100 size-11 rounded-xl"
+                >
+                    <i
+                        class="fa-solid fa-user-doctor text-emerald-600 text-lg"
+                    ></i>
+                </div>
+                <div class="flex flex-col">
+                    <h4 class="text-[19px] font-semibold text-slate-900 leading-6">
                         Zalecenia wirtualnego specjalisty
                     </h4>
+                    <span class="text-xs text-slate-500">Personalizowana analiza AI</span>
                 </div>
-                <span
-                    v-if="user.blood_recommendations"
-                    class="text-sm text-gray-600"
-                    >Ocena na podstawie twoich wyników badań.</span
-                >
-                <span v-else class="text-sm text-gray-600"
-                    >Wypełnij wyniki swoich badań aby uzyskać
-                    rekomendacje.</span
-                >
+                <span v-if="user.blood_recommendations" class="ml-auto hidden sm:inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-100 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
+                    <span class="size-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Zaktualizowano
+                </span>
             </div>
-            <div
-                v-if="user.blood_recommendations"
-                v-html="user.blood_recommendations"
-                class="text-sm leading-6"
-            ></div>
+
+            <div v-if="user.blood_recommendations" class="space-y-4">
+                <p class="text-sm text-slate-600">Ocena na podstawie twoich wyników badań — wygenerowana przez AI.</p>
+                <div class="rounded-xl border border-slate-100 bg-gradient-to-br from-slate-50 to-white p-5 shadow-sm">
+                    <div
+                        v-html="user.blood_recommendations"
+                        class="prose prose-sm max-w-none prose-p:my-2.5 prose-p:leading-7 prose-p:text-slate-700 prose-strong:font-semibold prose-strong:text-slate-900 prose-b:font-semibold prose-b:text-slate-900 prose-ul:my-3 prose-ul:list-disc prose-ul:pl-5 prose-ol:my-3 prose-ol:list-decimal prose-ol:pl-5 prose-li:my-1.5 prose-li:text-slate-700 marker:text-emerald-500 prose-headings:text-slate-900 prose-headings:font-semibold"
+                    ></div>
+                </div>
+                <div class="flex gap-2.5 rounded-xl border border-amber-100 bg-amber-50/80 px-3.5 py-3">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-500 text-sm mt-0.5 shrink-0"></i>
+                    <div class="flex flex-col gap-1">
+                        <p class="text-xs font-medium text-amber-900">Ważna informacja</p>
+                        <p class="text-xs leading-5 text-amber-800">To wskazówki wygenerowane przez AI na podstawie danych, które podałeś. Mogą być niepełne — zawsze skonsultuj decyzje zdrowotne z lekarzem.</p>
+                    </div>
+                </div>
+            </div>
+            <div v-else class="rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-5 py-8 text-center">
+                <div class="mx-auto flex size-12 items-center justify-center rounded-full bg-white border border-slate-100 shadow-sm">
+                    <i class="fa-solid fa-wand-magic-sparkles text-emerald-500"></i>
+                </div>
+                <p class="mt-4 text-sm font-medium text-slate-700">Brak rekomendacji</p>
+                <p class="mt-1 text-sm text-slate-500">Wypełnij co najmniej jeden wynik po lewej, aby wygenerować spersonalizowane zalecenia.</p>
+                <p class="mt-2 text-xs text-slate-400">Analiza zajmuje kilka sekund.</p>
+            </div>
         </div>
     </div>
 </template>

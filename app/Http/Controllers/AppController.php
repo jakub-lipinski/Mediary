@@ -10,7 +10,7 @@ class AppController extends Controller
     public function dashboard(Request $request): Response
     {
         $user = $request->user();
-        $files = $user->files()->latest()->limit(5)->get(['id', 'filename', 'created_at']);
+        $files = $user->files()->latest()->limit(5)->get(['id', 'filename', 'size', 'type', 'created_at']);
         $weightsData = $user->weights()->latest('date')->limit(5)->get(['weight', 'date'])->sortBy('date')->values();
         $weights = $weightsData->pluck('weight');
         $dates = $weightsData->pluck('date')->map(fn ($date): string => $date->format('d.m'));

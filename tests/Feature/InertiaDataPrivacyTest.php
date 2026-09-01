@@ -63,6 +63,8 @@ class InertiaDataPrivacyTest extends TestCase
                 ->has('files.0', fn (Assert $fileProps) => $fileProps
                     ->has('id')
                     ->has('filename')
+                    ->has('size')
+                    ->has('type')
                     ->has('created_at')
                     ->missing('path')
                     ->missing('review')

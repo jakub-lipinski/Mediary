@@ -401,34 +401,46 @@ onBeforeUnmount(() => {
                 </div>
             </div>
             <div
-                class="w-full h-fit flex bg-white shadow-xs rounded-2xl p-4 flex-col gap-2 mt-0"
+                class="w-full h-fit flex bg-white shadow-xs rounded-2xl p-5 flex-col gap-4 mt-0"
             >
-                <div class="flex gap-2 items-center">
+                <div class="flex gap-3 items-center">
                     <div
-                        class="flex justify-center items-center bg-green-200 size-12 rounded-2xl"
+                        class="flex justify-center items-center bg-emerald-100 size-11 rounded-xl"
                     >
                         <i
-                            class="fa-solid fa-user-doctor text-green-600 text-xl"
+                            class="fa-solid fa-user-doctor text-emerald-600 text-lg"
                         ></i>
                     </div>
-                    <h4 class="text-2xl font-normal">Wirtualny specjalista</h4>
+                    <div class="flex flex-col">
+                        <h4 class="text-[19px] font-semibold text-slate-900 leading-6">Wirtualny specjalista</h4>
+                        <span class="text-xs text-slate-500">AI — podsumowanie badań</span>
+                    </div>
+                    <span v-if="user.blood_recommendations" class="ml-auto hidden sm:inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-100 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
+                        <span class="size-1.5 rounded-full bg-emerald-500"></span> Gotowe
+                    </span>
                 </div>
-                <span
-                    v-if="user.blood_recommendations"
-                    class="text-sm text-gray-600"
-                    >Ocena na podstawie twoich wyników badań.</span
-                >
-                <span v-else class="text-sm text-gray-600">
-                    <Link class="text-blue-600" :href="route('blood.index')"
-                        >Wypełnij wyniki</Link
-                    >
-                    swoich badań aby uzyskać rekomendacje.</span
-                >
-                <div class="flex">
+
+                <div v-if="user.blood_recommendations" class="rounded-xl border border-slate-100 bg-slate-50/70 p-4">
                     <div
-                        class="mt-2 text-sm"
                         v-html="user.blood_recommendations"
+                        class="prose prose-sm max-w-none prose-p:my-2.5 prose-p:leading-7 prose-p:text-slate-700 prose-strong:font-semibold prose-strong:text-slate-900 prose-b:font-semibold prose-b:text-slate-900 prose-ul:my-3 prose-ul:list-disc prose-ul:pl-5 prose-li:my-1 prose-li:text-slate-700 marker:text-emerald-400 prose-ul:marker:text-emerald-400"
                     ></div>
+                    <div class="mt-4 flex gap-2.5 rounded-lg border border-amber-100 bg-amber-50 px-3 py-2.5">
+                        <i class="fa-solid fa-shield-halved text-amber-500 text-xs mt-0.5"></i>
+                        <p class="text-[11px] leading-4 text-amber-800">Wskazówki AI nie zastępują konsultacji lekarskiej. W razie wątpliwości skonsultuj wyniki z lekarzem.</p>
+                    </div>
+                </div>
+                <div v-else class="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 px-4 py-6 text-center">
+                    <div class="mx-auto flex size-10 items-center justify-center rounded-full bg-white border border-slate-100 shadow-sm">
+                        <i class="fa-solid fa-flask text-slate-400"></i>
+                    </div>
+                    <p class="mt-3 text-sm text-slate-600">
+                        <Link class="font-medium text-blue-600 hover:text-blue-700" :href="route('blood.index')"
+                            >Wypełnij wyniki</Link
+                        >
+                        swoich badań aby uzyskać rekomendację.
+                    </p>
+                    <p class="mt-1 text-xs text-slate-400">Kilka minut — analiza AI od razu na pulpicie.</p>
                 </div>
             </div>
         </div>
@@ -463,12 +475,16 @@ onBeforeUnmount(() => {
                             class="shrink-0 size-12 rounded-2xl bg-gray-100 flex justify-center items-center"
                         >
                             <i
-                                v-if="file.type == 'doc'"
-                                class="fa-solid fa-file text-blue-600 text-xl"
+                                v-if="file.type === 'pdf'"
+                                class="fa-solid fa-file-pdf text-blue-600 text-xl"
                             ></i>
                             <i
-                                v-if="file.type == 'pdf'"
-                                class="fa-solid fa-file-pdf text-blue-600 text-xl"
+                                v-else-if="file.type === 'doc' || file.type === 'docx'"
+                                class="fa-solid fa-file-word text-blue-600 text-xl"
+                            ></i>
+                            <i
+                                v-else
+                                class="fa-solid fa-file text-blue-600 text-xl"
                             ></i>
                         </div>
 
