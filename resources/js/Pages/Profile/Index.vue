@@ -232,12 +232,16 @@ const formatDate = (myDate, monthFormat = "long") => {
                     class="shrink-0 size-12 rounded-2xl bg-gray-100 flex justify-center items-center"
                 >
                     <i
-                        v-if="file.type == 'doc'"
-                        class="fa-solid fa-file text-blue-600 text-xl"
+                        v-if="file.type === 'pdf'"
+                        class="fa-solid fa-file-pdf text-blue-600 text-xl"
                     ></i>
                     <i
-                        v-if="file.type == 'pdf'"
-                        class="fa-solid fa-file-pdf text-blue-600 text-xl"
+                        v-else-if="file.type === 'doc' || file.type === 'docx'"
+                        class="fa-solid fa-file-word text-blue-600 text-xl"
+                    ></i>
+                    <i
+                        v-else
+                        class="fa-solid fa-file text-blue-600 text-xl"
                     ></i>
                 </div>
 

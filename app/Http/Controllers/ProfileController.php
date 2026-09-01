@@ -24,7 +24,7 @@ class ProfileController extends Controller
                 ->values(),
             'files' => $user->files()
                 ->latest()
-                ->get(['id', 'filename', 'created_at'])
+                ->get(['id', 'filename', 'size', 'type', 'created_at'])
                 ->values(),
         ]);
     }
