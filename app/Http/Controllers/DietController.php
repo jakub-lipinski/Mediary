@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Inertia\Response;
 
@@ -71,9 +72,9 @@ class DietController extends Controller
         return redirect()->back()->with('success', 'Dieta stworzona pomyślnie.');
     }
 
-    public function destroy(Request $request, Diet $diet): RedirectResponse
+    public function destroy(Diet $diet): RedirectResponse
     {
-        abort_unless($diet->user()->is($request->user()), 403);
+        Gate::authorize('delete', $diet);
 
         $diet->delete();
 

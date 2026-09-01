@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Inertia\Response;
@@ -84,9 +85,9 @@ class FileController extends Controller
         return redirect()->back()->with('success', 'Plik przesłany pomyślnie.');
     }
 
-    public function show(Request $request, File $file): Response
+    public function show(File $file): Response
     {
-        abort_unless($file->user()->is($request->user()), 404);
+        Gate::authorize('view', $file);
 
         return Inertia('File/Show', [
             'file' => $file,
@@ -96,7 +97,7 @@ class FileController extends Controller
     public function destroy(Request $request, File $file): RedirectResponse
     {
         $user = $request->user();
-        abort_unless($file->user()->is($user), 404);
+        Gate::authorize('delete', $file);
 
         Storage::disk('public')->delete($file->path);
         $file->delete();

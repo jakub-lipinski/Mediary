@@ -6,6 +6,7 @@ use App\Http\Requests\Note\StoreNoteRequest;
 use App\Models\Note;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Response;
 
 class NoteController extends Controller
@@ -27,9 +28,9 @@ class NoteController extends Controller
         return redirect()->back()->with('success', 'Wpis dziennika dodany pomyślnie.');
     }
 
-    public function destroy(Request $request, Note $note): RedirectResponse
+    public function destroy(Note $note): RedirectResponse
     {
-        abort_unless($note->user()->is($request->user()), 403);
+        Gate::authorize('delete', $note);
 
         $note->delete();
 

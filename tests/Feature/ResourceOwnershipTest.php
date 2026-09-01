@@ -62,7 +62,7 @@ class ResourceOwnershipTest extends TestCase
 
         $response = $this->actingAs($visitor)->delete(route('diet.destroy', $diet));
 
-        $response->assertForbidden();
+        $response->assertNotFound();
         $this->assertModelExists($diet);
     }
 
@@ -83,7 +83,7 @@ class ResourceOwnershipTest extends TestCase
 
         $response = $this->actingAs($visitor)->delete(route('note.destroy', $note));
 
-        $response->assertForbidden();
+        $response->assertNotFound();
         $this->assertModelExists($note);
     }
 }
