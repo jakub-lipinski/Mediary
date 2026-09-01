@@ -576,14 +576,14 @@ onMounted(() => {
             </div>
 
             <div v-if="user.blood_recommendations" class="space-y-3">
-                <p class="text-sm text-slate-600">Ocena na podstawie twoich wyników badań — wygenerowana przez AI.</p>
+                <p class="text-sm text-slate-600">Ocena na podstawie twoich wyników badań wygenerowana przez AI.</p>
                 <div
                     v-html="user.blood_recommendations"
                     class="prose prose-sm max-w-none prose-p:my-2.5 prose-p:leading-7 prose-p:text-slate-700 prose-strong:font-semibold prose-strong:text-slate-900 prose-b:font-semibold prose-b:text-slate-900 prose-ul:my-3 prose-ul:list-disc prose-ul:pl-5 prose-ol:my-3 prose-ol:list-decimal prose-ol:pl-5 prose-li:my-1.5 prose-li:text-slate-700 marker:text-emerald-500 prose-headings:text-slate-900 prose-headings:font-semibold"
                 ></div>
                 <p class="flex gap-2 text-[11px] leading-4 text-slate-500">
                     <i class="fa-solid fa-circle-info text-slate-400 mt-0.5 shrink-0"></i>
-                    <span>To wskazówki AI — mogą być niepełne, zawsze skonsultuj decyzje zdrowotne z lekarzem.</span>
+                    <span>To wskazówki AI mogą być niepełne, zawsze skonsultuj decyzje zdrowotne z lekarzem.</span>
                 </p>
             </div>
             <div v-else class="rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-5 py-8 text-center">
