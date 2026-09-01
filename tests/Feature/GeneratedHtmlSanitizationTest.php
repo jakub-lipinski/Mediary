@@ -14,14 +14,18 @@ class GeneratedHtmlSanitizationTest extends TestCase
 
     public function test_generated_diet_html_is_sanitized_before_storage(): void
     {
-        DietPlanGenerator::fake([[
-            'days' => [[
-                'day' => 'Poniedziałek',
+        $days = collect(['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela'])
+            ->map(fn (string $day): array => [
+                'day' => $day,
                 'protein' => 120,
                 'fat' => 70,
                 'carbohydrates' => 220,
                 'content' => '<ul onclick="alert(1)"><li><script>alert(1)</script><b style="color:red">Śniadanie:</b> Owsianka</li></ul>',
-            ]],
+            ])
+            ->all();
+
+        DietPlanGenerator::fake([[
+            'days' => $days,
         ]])->preventStrayPrompts();
 
         $user = User::factory()->create([
@@ -42,13 +46,13 @@ class GeneratedHtmlSanitizationTest extends TestCase
             ->assertSessionHasNoErrors()
             ->assertRedirect();
 
-        $content = DietDay::query()->sole()->content;
+        $content = DietDay::query()->where('day', 'Poniedziałek')->value('content');
 
         $this->assertSame('<ul><li><b>Śniadanie:</b> Owsianka</li></ul>', $content);
 
         DietPlanGenerator::assertPrompted(
-            fn ($prompt): bool => str_contains($prompt->prompt, 'Typ diety: klasyczna.')
-                && str_contains($prompt->prompt, 'pełne dania')
+            fn ($prompt): bool => str_contains($prompt->prompt, '"diet_type":"klasyczna"')
+                && str_contains($prompt->prompt, '<untrusted_user_data>')
         );
     }
 }

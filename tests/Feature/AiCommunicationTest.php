@@ -47,8 +47,8 @@ class AiCommunicationTest extends TestCase
 
         BloodResultsReviewer::assertPrompted(
             fn ($prompt): bool => str_contains($prompt->prompt, '"wbc":5.5')
-                && str_contains($prompt->prompt, 'wiek 35 lat')
-                && str_contains($prompt->prompt, 'Nie zakładaj jednostek')
+                && str_contains($prompt->prompt, '"age":"35"')
+                && str_contains($prompt->prompt, '<untrusted_user_data>')
         );
     }
 
@@ -92,7 +92,7 @@ class AiCommunicationTest extends TestCase
         BloodPressureReviewer::assertPrompted(
             fn ($prompt): bool => str_contains($prompt->prompt, '"systolic":120')
                 && str_contains($prompt->prompt, '2026-06-10')
-                && str_contains($prompt->prompt, 'skup się tylko na aktualnym pomiarze')
+                && str_contains($prompt->prompt, '"previous_measurements"')
         );
     }
 
@@ -137,12 +137,13 @@ class AiCommunicationTest extends TestCase
         MedicalFileClassifier::assertPrompted(
             fn ($prompt): bool => str_contains($prompt->prompt, 'Morfologia krwi')
                 && str_contains($prompt->prompt, 'danych wrażliwych')
+                && str_contains($prompt->prompt, '<untrusted_document>')
         );
 
         MedicalFileReviewer::assertPrompted(
             fn ($prompt): bool => str_contains($prompt->prompt, 'nadciśnienie')
                 && str_contains($prompt->prompt, 'Morfologia krwi')
-                && str_contains($prompt->prompt, 'nie ma w dokumencie')
+                && str_contains($prompt->prompt, '<untrusted_profile>')
         );
     }
 
