@@ -573,26 +573,18 @@ onMounted(() => {
                     </h4>
                     <span class="text-xs text-slate-500">Personalizowana analiza AI</span>
                 </div>
-                <span v-if="user.blood_recommendations" class="ml-auto hidden sm:inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-100 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
-                    <span class="size-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Zaktualizowano
-                </span>
             </div>
 
-            <div v-if="user.blood_recommendations" class="space-y-4">
+            <div v-if="user.blood_recommendations" class="space-y-3">
                 <p class="text-sm text-slate-600">Ocena na podstawie twoich wyników badań — wygenerowana przez AI.</p>
-                <div class="rounded-xl border border-slate-100 bg-gradient-to-br from-slate-50 to-white p-5 shadow-sm">
-                    <div
-                        v-html="user.blood_recommendations"
-                        class="prose prose-sm max-w-none prose-p:my-2.5 prose-p:leading-7 prose-p:text-slate-700 prose-strong:font-semibold prose-strong:text-slate-900 prose-b:font-semibold prose-b:text-slate-900 prose-ul:my-3 prose-ul:list-disc prose-ul:pl-5 prose-ol:my-3 prose-ol:list-decimal prose-ol:pl-5 prose-li:my-1.5 prose-li:text-slate-700 marker:text-emerald-500 prose-headings:text-slate-900 prose-headings:font-semibold"
-                    ></div>
-                </div>
-                <div class="flex gap-2.5 rounded-xl border border-amber-100 bg-amber-50/80 px-3.5 py-3">
-                    <i class="fa-solid fa-triangle-exclamation text-amber-500 text-sm mt-0.5 shrink-0"></i>
-                    <div class="flex flex-col gap-1">
-                        <p class="text-xs font-medium text-amber-900">Ważna informacja</p>
-                        <p class="text-xs leading-5 text-amber-800">To wskazówki wygenerowane przez AI na podstawie danych, które podałeś. Mogą być niepełne — zawsze skonsultuj decyzje zdrowotne z lekarzem.</p>
-                    </div>
-                </div>
+                <div
+                    v-html="user.blood_recommendations"
+                    class="prose prose-sm max-w-none prose-p:my-2.5 prose-p:leading-7 prose-p:text-slate-700 prose-strong:font-semibold prose-strong:text-slate-900 prose-b:font-semibold prose-b:text-slate-900 prose-ul:my-3 prose-ul:list-disc prose-ul:pl-5 prose-ol:my-3 prose-ol:list-decimal prose-ol:pl-5 prose-li:my-1.5 prose-li:text-slate-700 marker:text-emerald-500 prose-headings:text-slate-900 prose-headings:font-semibold"
+                ></div>
+                <p class="flex gap-2 text-[11px] leading-4 text-slate-500">
+                    <i class="fa-solid fa-circle-info text-slate-400 mt-0.5 shrink-0"></i>
+                    <span>To wskazówki AI — mogą być niepełne, zawsze skonsultuj decyzje zdrowotne z lekarzem.</span>
+                </p>
             </div>
             <div v-else class="rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-5 py-8 text-center">
                 <div class="mx-auto flex size-12 items-center justify-center rounded-full bg-white border border-slate-100 shadow-sm">
