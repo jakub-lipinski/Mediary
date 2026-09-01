@@ -4,6 +4,7 @@ namespace App\Http\Requests\File;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\File;
 
 class StoreMedicalFileRequest extends FormRequest
 {
@@ -20,7 +21,12 @@ class StoreMedicalFileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'file' => ['required', 'file', 'max:10240', 'mimes:pdf,docx', 'mimetypes:application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+            'file' => [
+                'required',
+                File::types(['pdf', 'docx'])->max(10 * 1024),
+                'extensions:pdf,docx',
+                'mimetypes:application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            ],
         ];
     }
 
@@ -34,6 +40,7 @@ class StoreMedicalFileRequest extends FormRequest
             'file.file' => 'Plik jest wymagany.',
             'file.mimes' => 'Plik musi być w formacie .pdf lub .docx.',
             'file.mimetypes' => 'Plik musi być poprawnym dokumentem PDF lub DOCX.',
+            'file.extensions' => 'Rozszerzenie pliku musi być zgodne z formatem PDF lub DOCX.',
             'file.max' => 'Plik nie może być większy niż 10MB.',
         ];
     }

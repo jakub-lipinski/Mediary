@@ -5,9 +5,11 @@ namespace Tests\Feature;
 use App\Models\File;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
+use ZipArchive;
 
 class PrivateMedicalFileStorageTest extends TestCase
 {
@@ -88,6 +90,32 @@ class PrivateMedicalFileStorageTest extends TestCase
         Storage::disk('medical')->assertExists($file->path, 'legacy public content');
     }
 
+    public function test_docx_with_pathological_compression_is_rejected_before_ai_processing(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post(route('file.store'), [
+            'file' => $this->compressedDocxUpload(),
+        ]);
+
+        $response->assertSessionHasErrors('file');
+        $this->assertDatabaseCount('files', 0);
+    }
+
+    public function test_file_content_must_match_its_extension(): void
+    {
+        $user = User::factory()->create();
+        $file = UploadedFile::fake()
+            ->createWithContent('disguised.docx', "%PDF-1.4\n%%EOF")
+            ->mimeType('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+
+        $this->actingAs($user)
+            ->post(route('file.store'), ['file' => $file])
+            ->assertSessionHasErrors('file');
+
+        $this->assertDatabaseCount('files', 0);
+    }
+
     private function medicalFile(User $user): File
     {
         return $user->files()->create([
@@ -97,5 +125,23 @@ class PrivateMedicalFileStorageTest extends TestCase
             'type' => 'pdf',
             'review' => '<p>Opis wyników.</p>',
         ]);
+    }
+
+    private function compressedDocxUpload(): UploadedFile
+    {
+        $path = tempnam(sys_get_temp_dir(), 'mediary-docx-');
+        $zip = new ZipArchive;
+
+        $zip->open($path, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        $zip->addFromString('[Content_Types].xml', '<?xml version="1.0"?><Types></Types>');
+        $zip->addFromString('word/document.xml', str_repeat('<w:t>result</w:t>', 400000));
+        $zip->close();
+
+        $content = file_get_contents($path);
+        @unlink($path);
+
+        return UploadedFile::fake()
+            ->createWithContent('compressed.docx', $content ?: '')
+            ->mimeType('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     }
 }

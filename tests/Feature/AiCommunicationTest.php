@@ -132,7 +132,7 @@ class AiCommunicationTest extends TestCase
         );
 
         Storage::disk('medical')->assertExists($medicalFile->path);
-        $this->assertSame('doc', $medicalFile->type);
+        $this->assertSame('docx', $medicalFile->type);
 
         MedicalFileClassifier::assertPrompted(
             fn ($prompt): bool => str_contains($prompt->prompt, 'Morfologia krwi')

@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Response;
 use Smalot\PdfParser\Parser;
@@ -20,12 +21,20 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class FileController extends Controller
 {
+    private const MAX_DOCX_ENTRIES = 2000;
+
+    private const MAX_DOCX_XML_BYTES = 5 * 1024 * 1024;
+
+    private const MAX_DOCX_COMPRESSION_RATIO = 100;
+
+    private const MAX_EXTRACTED_TEXT_LENGTH = 100000;
+
     public function store(StoreMedicalFileRequest $request): RedirectResponse
     {
         $user = $request->user();
         $file = $request->file('file');
-        $filename = $file->getClientOriginalName();
-        $type = $file->getClientMimeType();
+        $filename = $this->safeOriginalName($file);
+        $type = Str::lower($file->getClientOriginalExtension());
         $size = round($file->getSize() / 1024 / 1024, 2);
 
         $text = $this->extractText($file);
@@ -63,12 +72,6 @@ class FileController extends Controller
             throw ValidationException::withMessages([
                 'file' => 'Nie udało się przeanalizować pliku. Spróbuj ponownie później.',
             ]);
-        }
-
-        if ($type === 'application/pdf') {
-            $type = 'pdf';
-        } elseif ($type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-            $type = 'doc';
         }
 
         $path = $file->store('files/'.$user->id, 'medical');
@@ -159,11 +162,13 @@ class FileController extends Controller
 
     private function extractText(UploadedFile $file): string
     {
-        return match ($file->getClientMimeType()) {
+        $text = match ($file->getMimeType()) {
             'application/pdf' => $this->extractPdfText($file),
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => $this->extractDocxText($file),
             default => '',
         };
+
+        return Str::limit($text, self::MAX_EXTRACTED_TEXT_LENGTH, '');
     }
 
     private function extractPdfText(UploadedFile $file): string
@@ -185,13 +190,47 @@ class FileController extends Controller
             return '';
         }
 
-        $documentXml = $zip->getFromName('word/document.xml');
-        $zip->close();
+        try {
+            if ($zip->numFiles > self::MAX_DOCX_ENTRIES) {
+                return '';
+            }
+
+            $document = $zip->statName('word/document.xml');
+
+            if ($document === false || $document['size'] > self::MAX_DOCX_XML_BYTES) {
+                return '';
+            }
+
+            $compressedSize = max(1, (int) $document['comp_size']);
+
+            if ($document['size'] / $compressedSize > self::MAX_DOCX_COMPRESSION_RATIO) {
+                return '';
+            }
+
+            if (($document['encryption_method'] ?? 0) !== 0) {
+                return '';
+            }
+
+            $documentXml = $zip->getFromName('word/document.xml');
+        } finally {
+            $zip->close();
+        }
 
         if ($documentXml === false) {
             return '';
         }
 
         return trim(html_entity_decode(strip_tags($documentXml), ENT_QUOTES | ENT_XML1, 'UTF-8'));
+    }
+
+    private function safeOriginalName(UploadedFile $file): string
+    {
+        $name = Str::of(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME))
+            ->replaceMatches('/[\x00-\x1F\x7F]/u', '')
+            ->squish()
+            ->limit(220, '')
+            ->toString();
+
+        return ($name !== '' ? $name : 'document').'.'.Str::lower($file->getClientOriginalExtension());
     }
 }
