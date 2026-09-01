@@ -23,7 +23,7 @@ Route::get('/', function () {
 Route::controller(GoogleController::class)->group(function () {
     Route::get('/auth/google/redirect', 'redirect')->name('google.redirect');
     Route::get('/auth/google/callback', 'callback')->name('google.callback');
-});
+})->middleware('throttle:oauth');
 
 Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])->group(function () {
     Route::controller(AppController::class)->group(function () {
@@ -38,13 +38,13 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
     Route::controller(BloodController::class)->group(function () {
         Route::get('/badania-krwi', 'index')->name('blood.index');
-        Route::patch('/badania-krwi/wyniki', 'update')->name('blood.update');
-        Route::post('/badania-krwi/cisnienie', 'pressure')->name('blood.pressure');
+        Route::patch('/badania-krwi/wyniki', 'update')->middleware('throttle:ai-analysis')->name('blood.update');
+        Route::post('/badania-krwi/cisnienie', 'pressure')->middleware('throttle:ai-analysis')->name('blood.pressure');
     });
 
     Route::controller(DietController::class)->group(function () {
         Route::get('/diety', 'index')->name('diet.index');
-        Route::post('/diety/stworz', 'store')->name('diet.store');
+        Route::post('/diety/stworz', 'store')->middleware('throttle:ai-analysis')->name('diet.store');
         Route::delete('/diety/usun/{diet}', 'destroy')->name('diet.destroy');
     });
 
@@ -56,7 +56,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
     Route::controller(FileController::class)->group(function () {
         Route::get('/plik/{file:id}', 'show')->name('file.show');
-        Route::post('/przeslij-plik', 'store')->name('file.store');
+        Route::post('/przeslij-plik', 'store')->middleware('throttle:medical-files')->name('file.store');
         Route::delete('/usun-plik/{file:id}', 'destroy')->name('file.destroy');
     });
 });
