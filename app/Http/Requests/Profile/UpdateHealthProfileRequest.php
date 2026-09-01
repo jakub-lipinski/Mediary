@@ -4,6 +4,7 @@ namespace App\Http\Requests\Profile;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateHealthProfileRequest extends FormRequest
 {
@@ -20,10 +21,10 @@ class UpdateHealthProfileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'gender' => ['nullable', 'string', 'max:64'],
+            'gender' => ['nullable', Rule::in(['Kobieta', 'Mężczyzna', 'Wole nie podawac', 'Wolę nie podawać'])],
             'weight' => ['nullable', 'numeric', 'min:1', 'max:500'],
             'height' => ['nullable', 'numeric', 'min:30', 'max:260'],
-            'birthday' => ['nullable', 'date', 'before:today'],
+            'birthday' => ['nullable', 'date', 'before:today', 'after:1900-01-01'],
             'diseases' => ['nullable', 'string', 'max:5000'],
         ];
     }
