@@ -1,8 +1,8 @@
 <script setup>
 import MainLayout from "@/Layouts/MainLayout.vue";
 import PrimaryButton from "@/Components/PrimaryButton.vue";
-import VuePdfEmbed from "vue-pdf-embed";
 import { Link, Head } from "@inertiajs/vue3";
+import { onMounted, shallowRef } from "vue";
 
 defineOptions({
     layout: MainLayout,
@@ -10,6 +10,20 @@ defineOptions({
 
 const props = defineProps({
     file: Object,
+});
+const pdfViewer = shallowRef(null);
+const pdfLoadFailed = shallowRef(false);
+
+onMounted(async () => {
+    if (props.file.type !== "pdf") {
+        return;
+    }
+
+    try {
+        pdfViewer.value = (await import("vue-pdf-embed")).default;
+    } catch {
+        pdfLoadFailed.value = true;
+    }
 });
 
 const back = () => {
@@ -127,7 +141,35 @@ const fileUrl = () => props.file.content_url;
             <div
                 class="w-full h-[600px] overflow-y-hidden border-2 rounded-xl border-gray-200"
             >
-                <VuePdfEmbed v-if="file.type === 'pdf'" :source="fileUrl()" />
+                <component
+                    :is="pdfViewer"
+                    v-if="file.type === 'pdf' && pdfViewer"
+                    :source="fileUrl()"
+                />
+                <div
+                    v-else-if="file.type === 'pdf' && !pdfLoadFailed"
+                    class="flex h-full items-center justify-center bg-slate-50 text-sm text-slate-600"
+                    role="status"
+                >
+                    <span class="animate-pulse">Ładowanie podglądu PDF…</span>
+                </div>
+                <div
+                    v-else-if="file.type === 'pdf'"
+                    class="flex h-full flex-col items-center justify-center gap-3 bg-slate-50 p-6 text-center"
+                    role="alert"
+                >
+                    <p class="text-sm text-slate-600">
+                        Nie udało się załadować podglądu PDF.
+                    </p>
+                    <a
+                        :href="fileUrl()"
+                        target="_blank"
+                        rel="noopener"
+                        class="rounded-full bg-blue-600 px-4 py-2 text-sm text-white duration-200 hover:bg-blue-700"
+                    >
+                        Otwórz plik
+                    </a>
+                </div>
                 <div
                     v-else
                     class="h-full flex flex-col justify-center items-center gap-4 text-center p-6"

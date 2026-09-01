@@ -8,12 +8,14 @@ defineOptions({
 });
 
 import { Link, usePage, useForm } from "@inertiajs/vue3";
-import ApexCharts from "apexcharts";
 
-import { computed, onMounted } from "vue";
+import { computed, onBeforeUnmount, onMounted } from "vue";
 
 const page = usePage();
 const user = computed(() => page.props.user);
+let weightChart = null;
+let pressureChart = null;
+let isMounted = false;
 
 const props = defineProps({
     weights: Array,
@@ -193,17 +195,29 @@ const formatDate = (myDate) => {
     });
 };
 
-onMounted(() => {
-    const chartElement = document.querySelector("#chart");
-    if (chartElement) {
-        var chart = new ApexCharts(chartElement, options);
-        chart.render();
-    }
+onMounted(async () => {
+    isMounted = true;
+    try {
+        const { default: ApexCharts } = await import("apexcharts");
 
-    const chartHeartElement = document.querySelector("#chart-heart");
-    if (chartHeartElement) {
-        var chartHeart = new ApexCharts(chartHeartElement, optionsHeart);
-        chartHeart.render();
+        if (!isMounted) {
+            return;
+        }
+
+        const chartElement = document.querySelector("#chart");
+        if (chartElement) {
+            weightChart = new ApexCharts(chartElement, options);
+            weightChart.render();
+        }
+
+        const chartHeartElement = document.querySelector("#chart-heart");
+        if (chartHeartElement) {
+            pressureChart = new ApexCharts(chartHeartElement, optionsHeart);
+            pressureChart.render();
+        }
+    } catch {
+        weightChart = null;
+        pressureChart = null;
     }
 
     const addFileBtn = document.querySelector("#add-file");
@@ -227,6 +241,12 @@ onMounted(() => {
             addFileBackground.classList.add("hidden");
         }
     });
+});
+
+onBeforeUnmount(() => {
+    isMounted = false;
+    weightChart?.destroy();
+    pressureChart?.destroy();
 });
 </script>
 
