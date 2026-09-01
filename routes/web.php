@@ -25,7 +25,7 @@ Route::controller(GoogleController::class)->group(function () {
     Route::get('/auth/google/callback', 'callback')->name('google.callback');
 })->middleware('throttle:oauth');
 
-Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])->group(function () {
+Route::middleware(['auth:sanctum', config('jetstream.auth_session')])->group(function () {
     Route::controller(AppController::class)->group(function () {
         Route::get('/pulpit', 'dashboard')->name('dashboard');
     });
