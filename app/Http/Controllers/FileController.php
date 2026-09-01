@@ -8,9 +8,8 @@ use App\Ai\Agents\MedicalFileReviewer;
 use App\Http\Requests\File\StoreMedicalFileRequest;
 use App\Models\File;
 use App\Models\User;
+use App\Support\GeneratedHtmlSanitizer;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -30,7 +29,10 @@ class FileController extends Controller
 
     private const MAX_EXTRACTED_TEXT_LENGTH = 100000;
 
-    public function __construct(private AgentRunner $agentRunner) {}
+    public function __construct(
+        private AgentRunner $agentRunner,
+        private GeneratedHtmlSanitizer $htmlSanitizer,
+    ) {}
 
     public function store(StoreMedicalFileRequest $request): RedirectResponse
     {
@@ -75,7 +77,7 @@ class FileController extends Controller
             'Usługa analizy dokumentu jest chwilowo niedostępna. Spróbuj ponownie później.',
         );
 
-        $review = $this->sanitizeGeneratedHtml($response['html'] ?? null, ['p', 'br', 'b', 'strong']);
+        $review = $this->htmlSanitizer->sanitize($response['html'] ?? null, ['p', 'br', 'b', 'strong']);
 
         if (blank($review)) {
             throw ValidationException::withMessages([
@@ -98,8 +100,6 @@ class FileController extends Controller
 
             throw $exception;
         }
-
-        Cache::forget('files_'.$user->id);
 
         return redirect()->back()->with('success', 'Plik przesłany pomyślnie.');
     }
@@ -141,14 +141,12 @@ class FileController extends Controller
         return Storage::disk('medical')->download($file->path, $file->filename, $headers);
     }
 
-    public function destroy(Request $request, File $file): RedirectResponse
+    public function destroy(File $file): RedirectResponse
     {
-        $user = $request->user();
         Gate::authorize('delete', $file);
 
         Storage::disk('medical')->delete($file->path);
         $file->delete();
-        Cache::forget('files_'.$user->id);
 
         return redirect()->route('dashboard')->with('success', 'Plik usunięty pomyślnie.');
     }

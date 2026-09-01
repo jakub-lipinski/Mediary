@@ -7,6 +7,7 @@ use App\Ai\Agents\DietPlanGenerator;
 use App\Http\Requests\Diet\StoreDietRequest;
 use App\Models\Diet;
 use App\Models\User;
+use App\Support\GeneratedHtmlSanitizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +18,10 @@ use Inertia\Response;
 
 class DietController extends Controller
 {
-    public function __construct(private AgentRunner $agentRunner) {}
+    public function __construct(
+        private AgentRunner $agentRunner,
+        private GeneratedHtmlSanitizer $htmlSanitizer,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -93,7 +97,7 @@ class DietController extends Controller
                     }
                 }
 
-                $content = $this->sanitizeGeneratedHtml((string) $day['content']);
+                $content = $this->htmlSanitizer->sanitize((string) $day['content']);
 
                 if (blank($content)) {
                     throw ValidationException::withMessages([

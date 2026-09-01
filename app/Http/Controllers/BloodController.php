@@ -8,10 +8,10 @@ use App\Ai\Agents\BloodResultsReviewer;
 use App\Http\Requests\Blood\StoreBloodPressureRequest;
 use App\Http\Requests\Blood\UpdateBloodResultsRequest;
 use App\Models\User;
+use App\Support\GeneratedHtmlSanitizer;
 use Devrabiul\ToastMagic\Facades\ToastMagic;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 use Inertia\Response;
 
@@ -51,7 +51,10 @@ class BloodController extends Controller
         'blood_recommendations',
     ];
 
-    public function __construct(private AgentRunner $agentRunner) {}
+    public function __construct(
+        private AgentRunner $agentRunner,
+        private GeneratedHtmlSanitizer $htmlSanitizer,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -71,7 +74,7 @@ class BloodController extends Controller
             'Usługa analizy wyników jest chwilowo niedostępna. Spróbuj ponownie później.',
         );
 
-        $data['blood_recommendations'] = $this->sanitizeGeneratedHtml($response['html'] ?? null);
+        $data['blood_recommendations'] = $this->htmlSanitizer->sanitize($response['html'] ?? null);
 
         if (blank($data['blood_recommendations'])) {
             throw ValidationException::withMessages([
@@ -114,8 +117,6 @@ class BloodController extends Controller
         }
 
         $user->bloodPressures()->create($data);
-
-        Cache::forget('blood_pressures_'.$user->id);
 
         return redirect()->back();
     }
