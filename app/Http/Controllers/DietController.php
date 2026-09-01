@@ -21,10 +21,29 @@ class DietController extends Controller
 
     public function index(Request $request): Response
     {
+        $diets = $request->user()->diets()
+            ->select(['id', 'name', 'type', 'calories', 'meals', 'created_at'])
+            ->with([
+                'days' => fn ($query) => $query
+                    ->select(['id', 'diet_id', 'day', 'protein', 'fat', 'carbohydrates', 'content'])
+                    ->orderBy('id'),
+            ])
+            ->latest()
+            ->get()
+            ->map(fn (Diet $diet): array => [
+                ...$diet->only(['id', 'name', 'type', 'calories', 'meals', 'created_at']),
+                'days' => $diet->days->map(fn ($day): array => $day->only([
+                    'id',
+                    'day',
+                    'protein',
+                    'fat',
+                    'carbohydrates',
+                    'content',
+                ])),
+            ]);
+
         return Inertia('Diet/Index', [
-            'diets' => $request->user()->diets()->with([
-                'days' => fn ($query) => $query->orderBy('id'),
-            ])->latest()->get(),
+            'diets' => $diets,
         ]);
     }
 

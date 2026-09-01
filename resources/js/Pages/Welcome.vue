@@ -128,19 +128,19 @@ onMounted(() => {
                 </ul>
                 <div class="desktop-nav__buttons">
                     <Link
-                        v-if="$page.props.user"
+                        v-if="$page.props.auth.user"
                         :href="route('login')"
                         class="desktop-nav__button"
                         >Panel użytkownika</Link
                     >
                     <Link
-                        v-if="!$page.props.user"
+                        v-if="!$page.props.auth.user"
                         :href="route('login')"
                         class="desktop-nav__button desktop-nav__button--empty"
                         >Zaloguj się</Link
                     >
                     <Link
-                        v-if="!$page.props.user"
+                        v-if="!$page.props.auth.user"
                         :href="route('register')"
                         class="desktop-nav__button"
                         >Zarejestruj się</Link

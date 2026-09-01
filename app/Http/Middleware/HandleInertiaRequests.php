@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use Laravel\Fortify\Features;
 use Tighten\Ziggy\Ziggy;
 
 class HandleInertiaRequests extends Middleware
@@ -33,13 +34,20 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user(),
+                'user' => fn () => $request->user() ? [
+                    'id' => $request->user()->id,
+                    'name' => $request->user()->name,
+                    'email' => $request->user()->email,
+                    'email_verified_at' => $request->user()->email_verified_at,
+                    'profile_photo_url' => $request->user()->profile_photo_url,
+                    'two_factor_enabled' => Features::enabled(Features::twoFactorAuthentication())
+                        && $request->user()->two_factor_secret !== null,
+                ] : null,
             ],
             'ziggy' => fn () => [
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),
             ],
-            'user' => $request->user(),
             'app_url' => config('app.url'),
         ];
     }

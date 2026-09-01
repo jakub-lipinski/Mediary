@@ -10,17 +10,54 @@ use App\Http\Requests\Blood\UpdateBloodResultsRequest;
 use App\Models\User;
 use Devrabiul\ToastMagic\Facades\ToastMagic;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 use Inertia\Response;
 
 class BloodController extends Controller
 {
+    private const RESULT_FIELDS = [
+        'wbc',
+        'rbc',
+        'hgb',
+        'hct',
+        'mcv',
+        'mch',
+        'mchc',
+        'plt',
+        'rdw_sd',
+        'rdw_cv',
+        'pdw',
+        'mpv',
+        'p_lcr',
+        'pct',
+        'neu',
+        'lym',
+        'mono',
+        'eos',
+        'baso',
+        'tsh',
+        'ast',
+        'alt',
+        'bilirubin',
+        'alp',
+        'ggtp',
+        'total_cholesterol',
+        'hdl_cholesterol',
+        'non_hdl_cholesterol',
+        'ldl_cholesterol',
+        'triglycerides',
+        'blood_recommendations',
+    ];
+
     public function __construct(private AgentRunner $agentRunner) {}
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        return Inertia('Blood/Index');
+        return Inertia('Blood/Index', [
+            'user' => $request->user()->only(self::RESULT_FIELDS),
+        ]);
     }
 
     public function update(UpdateBloodResultsRequest $request): RedirectResponse

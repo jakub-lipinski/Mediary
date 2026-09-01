@@ -1,16 +1,16 @@
 <script setup>
 import { Link } from "@inertiajs/vue3";
 import { usePage } from "@inertiajs/vue3";
-import { onMounted } from "vue";
+import { computed, onMounted } from "vue";
 
 const page = usePage();
 
-const user = page.props.user;
+const user = computed(() => page.props.auth.user);
 
 const getAvatar = () => {
     return (
         "https://ui-avatars.com/api/?name=" +
-        user.name +
+        user.value.name +
         "&background=2563EB&color=fff&length=1"
     );
 };

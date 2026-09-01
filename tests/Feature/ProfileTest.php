@@ -66,7 +66,7 @@ class ProfileTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Profile/Edit')
             ->where('auth.user.id', $user->id)
-            ->where('user.id', $user->id));
+            ->missing('user'));
     }
 
     public function test_profile_information_can_be_updated(): void

@@ -16,17 +16,21 @@ class ProfileController extends Controller
         $user = $request->user();
 
         return Inertia('Profile/Index', [
-            'blood_pressures' => $user->bloodPressures()->oldest('date')->get()->values(),
-            'files' => $user->files()->latest()->get()->values(),
+            'user' => $user->only(['birthday', 'gender', 'weight', 'height', 'diseases']),
+            'blood_pressures' => $user->bloodPressures()
+                ->oldest('date')
+                ->get(['id', 'systolic', 'diastolic', 'date', 'review'])
+                ->values(),
+            'files' => $user->files()
+                ->latest()
+                ->get(['id', 'filename', 'created_at'])
+                ->values(),
         ]);
     }
 
     public function edit(Request $request): Response
     {
-        $user = $request->user();
-
         return Inertia('Profile/Edit', [
-            'user' => $user,
             'sessions' => $request->session()->get('auth.sessions', []),
             'confirmsTwoFactorAuthentication' => Features::optionEnabled(Features::twoFactorAuthentication(), 'confirm'),
         ]);

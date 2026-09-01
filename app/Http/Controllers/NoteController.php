@@ -14,7 +14,18 @@ class NoteController extends Controller
     public function index(Request $request): Response
     {
         return Inertia('Notes/Index', [
-            'notes' => $request->user()->notes()->latest('date')->get(),
+            'notes' => $request->user()->notes()
+                ->latest('date')
+                ->get([
+                    'id',
+                    'date',
+                    'mood',
+                    'energy_level',
+                    'stress_level',
+                    'sleep_hours',
+                    'water_intake',
+                    'note',
+                ]),
         ]);
     }
 
