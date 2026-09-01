@@ -20,7 +20,7 @@ class StoreNoteRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'date' => ['required', 'date'],
+            'date' => ['required', 'date', 'before_or_equal:today', 'after:1900-01-01'],
             'mood' => ['required', 'string', 'max:64'],
             'energy_level' => ['required', 'integer', 'min:1', 'max:10'],
             'stress_level' => ['required', 'integer', 'min:1', 'max:10'],

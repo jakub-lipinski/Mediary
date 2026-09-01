@@ -22,7 +22,7 @@ class StoreBloodPressureRequest extends FormRequest
         return [
             'systolic' => ['required', 'integer', 'min:40', 'max:300'],
             'diastolic' => ['required', 'integer', 'min:30', 'max:200'],
-            'date' => ['required', 'date'],
+            'date' => ['required', 'date', 'before_or_equal:today', 'after:1900-01-01'],
         ];
     }
 }

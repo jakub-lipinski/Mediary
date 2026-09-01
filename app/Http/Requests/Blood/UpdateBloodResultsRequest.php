@@ -4,6 +4,7 @@ namespace App\Http\Requests\Blood;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class UpdateBloodResultsRequest extends FormRequest
 {
@@ -60,5 +61,14 @@ class UpdateBloodResultsRequest extends FormRequest
                 'max:9999999.999',
             ]])
             ->all();
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            if (collect(self::FIELDS)->every(fn (string $field): bool => blank($this->input($field)))) {
+                $validator->errors()->add('wbc', 'Podaj co najmniej jeden wynik badania.');
+            }
+        });
     }
 }
