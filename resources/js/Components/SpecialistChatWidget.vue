@@ -40,12 +40,16 @@ const cleanTextForTts = (text) => {
 
 const stopAudio = () => {
     if (audioEl) {
+        // Prevent error event from firing on intentional stop
+        audioEl.onended = null;
+        audioEl.onerror = null;
         audioEl.pause();
-        audioEl.src = '';
+        // Do not set src='' — it triggers onerror in some browsers
         audioEl = null;
     }
     playingIdx.value = null;
     ttsLoadingIdx.value = null;
+    // Nie ustawiamy ttsError przy zatrzymaniu przez użytkownika
 };
 
 const toggleTts = () => {
@@ -97,13 +101,24 @@ const speak = async (text, idx) => {
             audioEl = null;
         };
         audio.onerror = () => {
+            // Ignoruj błąd jeśli zatrzymanie było intencjonalne
+            if (playingIdx.value === null) return;
             ttsError.value = 'Błąd odtwarzania audio.';
             playingIdx.value = null;
             ttsLoadingIdx.value = null;
         };
         await audio.play();
     } catch (e) {
-        ttsError.value = e.message || 'Błąd TTS.';
+        // AbortError przy zatrzymaniu to nie błąd — ignorujemy
+        const msg = e?.message || '';
+        const name = e?.name || '';
+        if (name === 'AbortError' || msg.includes('aborted') || msg.includes('interrupted') || msg.includes('play() request was interrupted')) {
+            ttsLoadingIdx.value = null;
+            return;
+        }
+        // Nie pokazuj błędu jeśli użytkownik sam zatrzymał
+        if (playingIdx.value === null && !msg) return;
+        ttsError.value = msg || 'Błąd TTS.';
         ttsLoadingIdx.value = null;
         playingIdx.value = null;
     }
