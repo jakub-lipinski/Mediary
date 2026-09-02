@@ -10,7 +10,9 @@ use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Laravel\Ai\Ai;
 use Laravel\Ai\Audio;
 use Laravel\Ai\Contracts\ConversationStore;
 use Laravel\Ai\Enums\Lab;
@@ -128,10 +130,48 @@ class ChatController extends Controller
             ? (new SpecialistChatAgent)->continue($conversationId, $user)
             : (new SpecialistChatAgent)->forUser($user);
 
+        if (blank(config('ai.providers.openai.key')) && ! Ai::hasFakeGatewayFor(SpecialistChatAgent::class)) {
+            Log::error('Chat stream: missing OPENAI_API_KEY', ['userId' => $user->id]);
+
+            throw ValidationException::withMessages([
+                'message' => 'Brak konfiguracji OPENAI_API_KEY. Uzupełnij .env i uruchom php artisan config:clear.',
+            ]);
+        }
+
         try {
-            // Use streaming per requirement
             return $agent->stream($prompt);
-        } catch (AiException|ConnectionException|RequestException $e) {
+        } catch (RequestException $e) {
+            $status = $e->response?->status();
+            $body = $e->response ? (string) $e->response->body() : $e->getMessage();
+            Log::error('Chat stream RequestException', [
+                'userId' => $user->id,
+                'status' => $status,
+                'body' => mb_substr($body, 0, 2000),
+            ]);
+
+            // Fallback for invalid model (400) – retry with gpt-4o
+            if ($status === 400 && str_contains(strtolower($body), 'model')) {
+                try {
+                    Log::warning('Chat stream fallback to gpt-4o', ['userId' => $user->id]);
+
+                    return $agent->stream($prompt, model: 'gpt-4o');
+                } catch (\Throwable $fallback) {
+                    Log::error('Chat fallback also failed', ['error' => $fallback->getMessage()]);
+                }
+            }
+
+            if ($status === 401) {
+                throw ValidationException::withMessages([
+                    'message' => 'Nieprawidłowy klucz OPENAI_API_KEY (401). Sprawdź .env i limit konta.',
+                ]);
+            }
+
+            throw ValidationException::withMessages([
+                'message' => 'Usługa czatu jest chwilowo niedostępna. Spróbuj ponownie później.',
+            ]);
+        } catch (AiException|ConnectionException $e) {
+            Log::error('Chat stream AiException', ['userId' => $user->id, 'error' => $e->getMessage()]);
+
             throw ValidationException::withMessages([
                 'message' => 'Usługa czatu jest chwilowo niedostępna. Spróbuj ponownie później.',
             ]);
@@ -167,9 +207,44 @@ class ChatController extends Controller
             ? (new SpecialistChatAgent)->continue($conversationId, $user)
             : (new SpecialistChatAgent)->forUser($user);
 
+        if (blank(config('ai.providers.openai.key')) && ! Ai::hasFakeGatewayFor(SpecialistChatAgent::class)) {
+            Log::error('Chat send: missing OPENAI_API_KEY', ['userId' => $user->id]);
+
+            throw ValidationException::withMessages([
+                'message' => 'Brak konfiguracji OPENAI_API_KEY. Uzupełnij .env i uruchom php artisan config:clear.',
+            ]);
+        }
+
         try {
             $response = $agent->prompt($prompt);
-        } catch (AiException|ConnectionException|RequestException) {
+        } catch (RequestException $e) {
+            $status = $e->response?->status();
+            $body = $e->response ? (string) $e->response->body() : $e->getMessage();
+            Log::error('Chat send RequestException', ['userId' => $user->id, 'status' => $status, 'body' => mb_substr($body, 0, 2000)]);
+
+            if ($status === 400 && str_contains(strtolower($body), 'model')) {
+                try {
+                    Log::warning('Chat send fallback to gpt-4o', ['userId' => $user->id]);
+                    $response = $agent->prompt($prompt, model: 'gpt-4o');
+                } catch (\Throwable $fallback) {
+                    Log::error('Chat fallback also failed', ['error' => $fallback->getMessage()]);
+
+                    throw ValidationException::withMessages([
+                        'message' => 'Usługa czatu jest chwilowo niedostępna. Spróbuj ponownie później.',
+                    ]);
+                }
+            } elseif ($status === 401) {
+                throw ValidationException::withMessages([
+                    'message' => 'Nieprawidłowy klucz OPENAI_API_KEY (401). Sprawdź .env i limit konta.',
+                ]);
+            } else {
+                throw ValidationException::withMessages([
+                    'message' => 'Usługa czatu jest chwilowo niedostępna. Spróbuj ponownie później.',
+                ]);
+            }
+        } catch (AiException|ConnectionException $e) {
+            Log::error('Chat send AiException', ['userId' => $user->id, 'error' => $e->getMessage()]);
+
             throw ValidationException::withMessages([
                 'message' => 'Usługa czatu jest chwilowo niedostępna. Spróbuj ponownie później.',
             ]);
