@@ -445,7 +445,7 @@ const toggle = () => {
                 <div class="flex items-center gap-1">
                     <button
                         @click="toggleTts"
-                        :title="isTtsEnabled ? 'Wyłącz czytanie odpowiedzi (ElevenLabs)' : 'Włącz czytanie odpowiedzi (ElevenLabs)'"
+                        :title="isTtsEnabled ? 'Wyłącz czytanie odpowiedzi' : 'Włącz czytanie odpowiedzi'"
                         :class="[
                             'size-8 rounded-full flex items-center justify-center border transition',
                             isTtsEnabled
@@ -491,7 +491,7 @@ const toggle = () => {
             <!-- TTS info when enabled -->
             <div v-if="isTtsEnabled" class="px-3 py-1.5 bg-blue-50 border-b border-blue-100 flex gap-2 items-center text-[11px] text-blue-800">
                 <i class="fa-solid fa-volume-high text-blue-500 text-[11px]"></i>
-                <span>Czytanie odpowiedzi włączone — głos <span class="font-semibold">Rachel</span> (ElevenLabs, przyjazny damski, darmowy plan). Kliknij głośniczek przy wiadomości, aby odtworzyć.</span>
+                <span>Czytanie odpowiedzi włączone — głos <span class="font-semibold">Rachel</span>. Kliknij głośniczek przy wiadomości, aby odtworzyć.</span>
                 <button @click="toggleTts" class="ml-auto text-[11px] text-blue-600 hover:text-blue-800 underline">Wyłącz</button>
             </div>
 
@@ -557,7 +557,7 @@ const toggle = () => {
                             <button
                                 @click="speak(msg.content, idx)"
                                 :disabled="ttsLoadingIdx === idx"
-                                :title="playingIdx === idx ? 'Zatrzymaj' : 'Odsłuchaj odpowiedź (Rachel, ElevenLabs)'"
+                                :title="playingIdx === idx ? 'Zatrzymaj' : 'Odsłuchaj odpowiedź'"
                                 :class="[
                                     'size-7 rounded-full flex items-center justify-center border text-xs transition',
                                     playingIdx === idx
