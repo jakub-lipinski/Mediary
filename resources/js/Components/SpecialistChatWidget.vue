@@ -1,5 +1,5 @@
 <script setup>
-import { ref, nextTick, onMounted, watch } from "vue";
+import { ref, nextTick, onMounted, watch, onBeforeUnmount } from "vue";
 
 const isOpen = ref(false);
 const conversations = ref([]);
@@ -12,12 +12,100 @@ const isLoadingConversations = ref(false);
 const error = ref("");
 const messagesContainer = ref(null);
 
+// TTS state
+const isTtsEnabled = ref(localStorage.getItem('mediary_tts_enabled') === '1');
+const ttsLoadingIdx = ref(null);
+const playingIdx = ref(null);
+const ttsError = ref("");
+let audioEl = null;
+
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
 const scrollToBottom = async () => {
     await nextTick();
     if (messagesContainer.value) {
         messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+    }
+};
+
+const cleanTextForTts = (text) => {
+    if (!text) return '';
+    let t = text.replace(/<[^>]*>/g, ' ');
+    t = t.replace(/[*_#`>\[\]]+/g, ' ');
+    t = t.replace(/\s+/g, ' ').trim();
+    // Limit for ElevenLabs free tier
+    if (t.length > 2800) t = t.slice(0, 2800);
+    return t;
+};
+
+const stopAudio = () => {
+    if (audioEl) {
+        audioEl.pause();
+        audioEl.src = '';
+        audioEl = null;
+    }
+    playingIdx.value = null;
+    ttsLoadingIdx.value = null;
+};
+
+const toggleTts = () => {
+    isTtsEnabled.value = !isTtsEnabled.value;
+    localStorage.setItem('mediary_tts_enabled', isTtsEnabled.value ? '1' : '0');
+    if (!isTtsEnabled.value) stopAudio();
+};
+
+const speak = async (text, idx) => {
+    const clean = cleanTextForTts(text);
+    if (!clean) return;
+    // toggle stop if same message playing
+    if (playingIdx.value === idx && audioEl && !audioEl.paused) {
+        stopAudio();
+        return;
+    }
+    stopAudio();
+    ttsLoadingIdx.value = idx;
+    ttsError.value = "";
+    try {
+        const res = await fetch(route('chat.audio'), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'audio/mpeg, application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+            body: JSON.stringify({ text: clean }),
+        });
+        if (!res.ok) {
+            let msg = 'Nie udało się odtworzyć głosu.';
+            try {
+                const data = await res.json();
+                msg = data.message || msg;
+            } catch {}
+            if (res.status === 503) msg = 'Usługa głosowa niedostępna — sprawdź ELEVENLABS_API_KEY.';
+            throw new Error(msg);
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audioEl = audio;
+        playingIdx.value = idx;
+        ttsLoadingIdx.value = null;
+        audio.onended = () => {
+            playingIdx.value = null;
+            ttsLoadingIdx.value = null;
+            URL.revokeObjectURL(url);
+            audioEl = null;
+        };
+        audio.onerror = () => {
+            ttsError.value = 'Błąd odtwarzania audio.';
+            playingIdx.value = null;
+            ttsLoadingIdx.value = null;
+        };
+        await audio.play();
+    } catch (e) {
+        ttsError.value = e.message || 'Błąd TTS.';
+        ttsLoadingIdx.value = null;
+        playingIdx.value = null;
     }
 };
 
@@ -71,6 +159,7 @@ const fetchMessages = async (conversationId) => {
 };
 
 const createConversation = async () => {
+    stopAudio();
     try {
         const res = await fetch(route('chat.store'), {
             method: 'POST',
@@ -94,13 +183,13 @@ const createConversation = async () => {
 };
 
 const selectConversation = async (id) => {
+    stopAudio();
     activeConversationId.value = id;
     await fetchMessages(id);
 };
 
 const ensureConversation = async () => {
     if (activeConversationId.value) return activeConversationId.value;
-    // create new
     const res = await fetch(route('chat.store'), {
         method: 'POST',
         headers: {
@@ -125,20 +214,21 @@ const sendMessage = async () => {
         return;
     }
     error.value = "";
+    ttsError.value = "";
+    stopAudio();
     const userMsg = { role: 'user', content: text };
     messages.value.push(userMsg);
     input.value = "";
     await scrollToBottom();
 
-    // streaming placeholder
     const assistantMsg = { role: 'assistant', content: '' };
     messages.value.push(assistantMsg);
+    const assistantIdx = messages.value.length - 1;
     isStreaming.value = true;
 
     try {
         const convId = await ensureConversation();
 
-        // Try streaming endpoint first
         const res = await fetch(route('chat.stream'), {
             method: 'POST',
             headers: {
@@ -153,7 +243,6 @@ const sendMessage = async () => {
         });
 
         if (!res.ok) {
-            // Try to parse validation error
             let errMsg = "Usługa czatu jest chwilowo niedostępna.";
             try {
                 const errData = await res.json();
@@ -162,21 +251,21 @@ const sendMessage = async () => {
             throw new Error(errMsg);
         }
 
-        // If response is JSON (fallback sync), handle
         const contentType = res.headers.get('content-type') || '';
         if (contentType.includes('application/json')) {
             const data = await res.json();
             assistantMsg.content = data.content || '';
-            // update active id if returned
             if (data.conversation_id && data.conversation_id !== activeConversationId.value) {
                 activeConversationId.value = data.conversation_id;
                 await fetchConversations();
             }
             await scrollToBottom();
+            if (isTtsEnabled.value && assistantMsg.content) {
+                speak(assistantMsg.content, assistantIdx);
+            }
             return;
         }
 
-        // SSE streaming
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
@@ -206,7 +295,6 @@ const sendMessage = async () => {
                             throw new Error(evt.message || 'Błąd strumienia');
                         }
                     } catch (e) {
-                        // if not json, treat as plain delta
                         if (payload && !payload.startsWith('{')) {
                             fullText += payload;
                             assistantMsg.content = fullText;
@@ -216,7 +304,6 @@ const sendMessage = async () => {
             }
         }
 
-        // Final buffer flush
         if (buffer.trim().startsWith('data:')) {
             const payload = buffer.trim().slice(5).trim();
             if (payload && payload !== '[DONE]') {
@@ -231,25 +318,22 @@ const sendMessage = async () => {
         }
 
         if (!fullText && !assistantMsg.content) {
-            // fallback: fetch history again (maybe stored via non-stream path)
             await fetchMessages(convId);
         } else {
-            // ensure final content set
             assistantMsg.content = fullText || assistantMsg.content;
         }
 
-        // refresh conversations list (updated_at, title)
         await fetchConversations();
-        // keep active
         if (convId) activeConversationId.value = convId;
 
+        if (isTtsEnabled.value && assistantMsg.content) {
+            speak(assistantMsg.content, assistantIdx);
+        }
+
     } catch (e) {
-        // remove empty assistant placeholder and show error
         messages.value.pop();
         error.value = e.message || "Nie udało się wysłać wiadomości. Spróbuj ponownie.";
-        // fallback to sync endpoint
         if (e.message.includes('niedostępna') || e.message.includes('Błąd')) {
-            // try sync
             try {
                 const convId = activeConversationId.value;
                 const syncRes = await fetch(route('chat.send'), {
@@ -266,10 +350,14 @@ const sendMessage = async () => {
                 });
                 if (syncRes.ok) {
                     const data = await syncRes.json();
+                    const idx = messages.value.length;
                     messages.value.push({ role: 'assistant', content: data.content });
                     error.value = "";
                     await scrollToBottom();
                     await fetchConversations();
+                    if (isTtsEnabled.value && data.content) {
+                        speak(data.content, idx);
+                    }
                     return;
                 }
             } catch {}
@@ -290,6 +378,7 @@ const handleKeydown = (e) => {
 const deleteConversation = async () => {
     if (!activeConversationId.value) return;
     if (!confirm('Usunąć tę rozmowę?')) return;
+    stopAudio();
     try {
         const res = await fetch(route('chat.destroy', activeConversationId.value), {
             method: 'DELETE',
@@ -317,12 +406,17 @@ watch(isOpen, async (open) => {
             await fetchMessages(activeConversationId.value);
         }
         await scrollToBottom();
+    } else {
+        stopAudio();
     }
 });
 
 onMounted(() => {
-    // prefetch without opening
     fetchConversations();
+});
+
+onBeforeUnmount(() => {
+    stopAudio();
 });
 
 const toggle = () => {
@@ -349,6 +443,18 @@ const toggle = () => {
                     </div>
                 </div>
                 <div class="flex items-center gap-1">
+                    <button
+                        @click="toggleTts"
+                        :title="isTtsEnabled ? 'Wyłącz czytanie odpowiedzi (ElevenLabs)' : 'Włącz czytanie odpowiedzi (ElevenLabs)'"
+                        :class="[
+                            'size-8 rounded-full flex items-center justify-center border transition',
+                            isTtsEnabled
+                                ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                                : 'text-slate-400 hover:bg-white hover:text-blue-600 border-transparent hover:border-slate-200'
+                        ]"
+                    >
+                        <i :class="isTtsEnabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark'" class="text-xs"></i>
+                    </button>
                     <button
                         @click="createConversation"
                         title="Nowa rozmowa"
@@ -380,6 +486,13 @@ const toggle = () => {
                     <span class="font-semibold">To jest asystent AI.</span>
                     Informacje mają charakter edukacyjny i nie zastępują konsultacji ze specjalistą. W razie wątpliwości skontaktuj się z lekarzem.
                 </p>
+            </div>
+
+            <!-- TTS info when enabled -->
+            <div v-if="isTtsEnabled" class="px-3 py-1.5 bg-blue-50 border-b border-blue-100 flex gap-2 items-center text-[11px] text-blue-800">
+                <i class="fa-solid fa-volume-high text-blue-500 text-[11px]"></i>
+                <span>Czytanie odpowiedzi włączone — głos <span class="font-semibold">Rachel</span> (ElevenLabs, przyjazny damski, darmowy plan). Kliknij głośniczek przy wiadomości, aby odtworzyć.</span>
+                <button @click="toggleTts" class="ml-auto text-[11px] text-blue-600 hover:text-blue-800 underline">Wyłącz</button>
             </div>
 
             <!-- Conversations tabs -->
@@ -416,6 +529,9 @@ const toggle = () => {
                     <p class="text-xs text-slate-500 mt-1 max-w-[260px] leading-4">
                         Mogę pomóc z interpretacją wyników, diety, dokumentów i dziennika. Zapytaj o cokolwiek — mam dostęp do Twojego profilu i badań.
                     </p>
+                    <p v-if="isTtsEnabled" class="text-[11px] text-blue-600 mt-2 flex items-center gap-1.5">
+                        <i class="fa-solid fa-volume-high"></i> Głos Rachel gotowy — odpowiedzi będą czytane automatycznie.
+                    </p>
                     <div class="mt-4 flex flex-wrap gap-1.5 justify-center max-w-[300px]">
                         <button @click="input = 'Jak interpretować moje ostatnie wyniki krwi?'; $nextTick(() => sendMessage())" class="px-3 py-1.5 bg-white border border-slate-200 rounded-full text-xs text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition">Wyniki krwi</button>
                         <button @click="input = 'Podsumuj moje ciśnienie z ostatniego tygodnia.'; $nextTick(() => sendMessage())" class="px-3 py-1.5 bg-white border border-slate-200 rounded-full text-xs text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition">Ciśnienie</button>
@@ -424,7 +540,7 @@ const toggle = () => {
                 </div>
 
                 <template v-else>
-                    <div v-for="(msg, idx) in messages" :key="idx" :class="['flex', msg.role === 'user' ? 'justify-end' : 'justify-start']">
+                    <div v-for="(msg, idx) in messages" :key="idx" :class="['flex flex-col', msg.role === 'user' ? 'items-end' : 'items-start']">
                         <div
                             :class="[
                                 'max-w-[82%] rounded-2xl px-4 py-2.5 text-sm leading-6 shadow-sm',
@@ -435,6 +551,29 @@ const toggle = () => {
                         >
                             <p v-if="msg.role === 'assistant'" class="whitespace-pre-wrap break-words">{{ msg.content }}<span v-if="isStreaming && idx === messages.length - 1" class="inline-block w-2 h-4 bg-blue-500 ml-1 animate-pulse translate-y-1"></span></p>
                             <p v-else class="whitespace-pre-wrap break-words">{{ msg.content }}</p>
+                        </div>
+                        <!-- Per-message TTS button for assistant -->
+                        <div v-if="msg.role === 'assistant' && msg.content" class="mt-1 flex items-center gap-2">
+                            <button
+                                @click="speak(msg.content, idx)"
+                                :disabled="ttsLoadingIdx === idx"
+                                :title="playingIdx === idx ? 'Zatrzymaj' : 'Odsłuchaj odpowiedź (Rachel, ElevenLabs)'"
+                                :class="[
+                                    'size-7 rounded-full flex items-center justify-center border text-xs transition',
+                                    playingIdx === idx
+                                        ? 'bg-blue-600 text-white border-blue-600 animate-pulse'
+                                        : 'bg-white text-slate-500 border-slate-200 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50'
+                                ]"
+                            >
+                                <i v-if="ttsLoadingIdx === idx" class="fa-solid fa-spinner fa-spin text-[11px]"></i>
+                                <i v-else-if="playingIdx === idx" class="fa-solid fa-stop text-[11px]"></i>
+                                <i v-else class="fa-solid fa-volume-high text-[11px]"></i>
+                            </button>
+                            <span v-if="playingIdx === idx" class="text-[11px] text-blue-600 flex items-center gap-1">
+                                <span class="size-1.5 bg-blue-500 rounded-full animate-pulse"></span> Odtwarzanie...
+                            </span>
+                            <span v-else-if="ttsLoadingIdx === idx" class="text-[11px] text-slate-400">Generowanie głosu...</span>
+                            <span v-else class="text-[11px] text-slate-400 hidden sm:inline">Odsłuchaj</span>
                         </div>
                     </div>
                     <div v-if="isStreaming && messages[messages.length-1]?.role === 'assistant' && !messages[messages.length-1].content" class="flex justify-start">
@@ -452,6 +591,12 @@ const toggle = () => {
                 <p class="text-xs text-red-600 flex gap-1.5 items-center">
                     <i class="fa-solid fa-triangle-exclamation text-[11px]"></i>
                     {{ error }}
+                </p>
+            </div>
+            <div v-if="ttsError" class="px-3 py-2 bg-amber-50 border-t border-amber-100">
+                <p class="text-xs text-amber-800 flex gap-1.5 items-center">
+                    <i class="fa-solid fa-volume-xmark text-[11px]"></i>
+                    {{ ttsError }}
                 </p>
             </div>
 

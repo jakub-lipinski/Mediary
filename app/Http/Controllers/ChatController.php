@@ -11,7 +11,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Laravel\Ai\Audio;
 use Laravel\Ai\Contracts\ConversationStore;
+use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Exceptions\AiException;
 use Laravel\Ai\Models\Conversation;
 
@@ -226,6 +228,62 @@ class ChatController extends Controller
 
         return response()->json([
             'message' => 'Rozmowa usunięta.',
+        ]);
+    }
+
+    /**
+     * Generate TTS for specialist response via ElevenLabs.
+     */
+    public function audio(Request $request)
+    {
+        $request->validate([
+            'text' => ['required', 'string', 'min:1', 'max:3000'],
+        ], [
+            'text.required' => 'Brak tekstu do odczytania.',
+            'text.max' => 'Tekst jest za długi do odczytania.',
+        ]);
+
+        if (blank(config('ai.providers.eleven.key'))) {
+            return response()->json([
+                'message' => 'Usługa głosowa jest chwilowo niedostępna (brak konfiguracji).',
+            ], 503);
+        }
+
+        $text = trim(strip_tags((string) $request->input('text')));
+        // Remove markdown artifacts for cleaner speech
+        $text = preg_replace('/[*_#`>\[\]]+/', ' ', $text) ?? $text;
+        $text = preg_replace('/\s+/', ' ', $text) ?? $text;
+        $text = trim($text);
+
+        if (blank($text)) {
+            return response()->json(['message' => 'Brak treści do odczytania.'], 422);
+        }
+
+        // ElevenLabs free friendly female voice - Rachel (21m00Tcm4TlvDq8ikWAM)
+        // Alternative: default-female (Matilda XrExE9yKIg1WjnnlVkGX) is also free.
+        $voiceId = config('ai.providers.eleven.voice') ?? env('ELEVENLABS_VOICE_ID', '21m00Tcm4TlvDq8ikWAM');
+
+        try {
+            $audio = Audio::of($text)
+                ->voice($voiceId)
+                ->generate(provider: Lab::ElevenLabs);
+        } catch (AiException|ConnectionException|RequestException $e) {
+            return response()->json([
+                'message' => 'Usługa głosowa jest chwilowo niedostępna. Spróbuj ponownie później.',
+            ], 503);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Nie udało się wygenerować audio.',
+            ], 500);
+        }
+
+        $binary = $audio->content();
+        $mime = $audio->mimeType() ?? 'audio/mpeg';
+
+        return response($binary, 200, [
+            'Content-Type' => $mime,
+            'Content-Length' => (string) strlen($binary),
+            'Cache-Control' => 'private, max-age=3600',
         ]);
     }
 }

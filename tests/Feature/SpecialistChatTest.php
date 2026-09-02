@@ -6,6 +6,7 @@ use App\Ai\Agents\SpecialistChatAgent;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Ai\Attributes\Model;
+use Laravel\Ai\Audio;
 use Tests\TestCase;
 
 class SpecialistChatTest extends TestCase
@@ -201,5 +202,65 @@ class SpecialistChatTest extends TestCase
         $attrs = $reflection->getAttributes(Model::class);
         $this->assertNotEmpty($attrs);
         $this->assertSame('gpt-5.6-luna', $attrs[0]->newInstance()->value);
+    }
+
+    public function test_audio_guest_cannot_access(): void
+    {
+        $this->post(route('chat.audio'), ['text' => 'hej'])->assertRedirect(route('login'));
+        $this->postJson(route('chat.audio'), ['text' => 'hej'])->assertStatus(401);
+    }
+
+    public function test_audio_validates_text(): void
+    {
+        config()->set('ai.providers.eleven.key', 'fake-key');
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->postJson(route('chat.audio'), ['text' => ''])
+            ->assertUnprocessable()->assertJsonValidationErrors('text');
+
+        $this->actingAs($user)->postJson(route('chat.audio'), ['text' => str_repeat('a', 3001)])
+            ->assertUnprocessable()->assertJsonValidationErrors('text');
+    }
+
+    public function test_audio_returns_503_when_no_key(): void
+    {
+        config()->set('ai.providers.eleven.key', '');
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->postJson(route('chat.audio'), ['text' => 'hej'])
+            ->assertStatus(503)->assertJson(['message' => 'Usługa głosowa jest chwilowo niedostępna (brak konfiguracji).']);
+    }
+
+    public function test_audio_generates_mpeg_via_elevenlabs(): void
+    {
+        config()->set('ai.providers.eleven.key', 'fake-eleven-key');
+        Audio::fake([base64_encode('fake-mp3-binary')]);
+
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post(route('chat.audio'), ['text' => 'Cześć, jak się masz?']);
+
+        $response->assertOk();
+        $this->assertStringContainsString('audio', $response->headers->get('Content-Type'));
+        $this->assertSame('fake-mp3-binary', $response->getContent());
+
+        Audio::assertGenerated(function ($prompt) {
+            return str_contains($prompt->text, 'Cześć')
+                && $prompt->voice === '21m00Tcm4TlvDq8ikWAM'
+                && $prompt->provider->name() === 'eleven';
+        });
+    }
+
+    public function test_audio_strips_html_and_markdown(): void
+    {
+        config()->set('ai.providers.eleven.key', 'fake-key');
+        Audio::fake([base64_encode('audio')]);
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->postJson(route('chat.audio'), ['text' => '<p><b>Witaj</b> **świecie**</p>'])
+            ->assertOk();
+
+        Audio::assertGenerated(fn ($prompt) => $prompt->text === 'Witaj świecie');
     }
 }

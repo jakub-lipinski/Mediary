@@ -69,5 +69,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session')])->group(fun
         Route::delete('/czat/konwersacje/{conversation}', 'destroy')->name('chat.destroy');
         Route::post('/czat/wiadomosc', 'stream')->middleware('throttle:ai-analysis')->name('chat.stream');
         Route::post('/czat/wiadomosc-sync', 'send')->middleware('throttle:ai-analysis')->name('chat.send');
+        Route::post('/czat/audio', 'audio')->middleware('throttle:ai-analysis')->name('chat.audio');
     });
 });
