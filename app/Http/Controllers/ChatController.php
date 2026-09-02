@@ -312,18 +312,42 @@ class ChatController extends Controller
             return response()->json(['message' => 'Brak treści do odczytania.'], 422);
         }
 
-        // ElevenLabs free friendly female voice - Rachel (21m00Tcm4TlvDq8ikWAM)
-        // Alternative: default-female (Matilda XrExE9yKIg1WjnnlVkGX) is also free.
+        // ElevenLabs Rachel (21m00Tcm4TlvDq8ikWAM) — free plan via API requires paid plan for library voices (402)
+        // Fallback to OpenAI nova (friendly female) when ElevenLabs fails — uses existing OPENAI_API_KEY
         $voiceId = config('ai.providers.eleven.voice') ?? env('ELEVENLABS_VOICE_ID', '21m00Tcm4TlvDq8ikWAM');
 
         try {
             $audio = Audio::of($text)
                 ->voice($voiceId)
                 ->generate(provider: Lab::ElevenLabs);
-        } catch (AiException|ConnectionException|RequestException $e) {
-            return response()->json([
-                'message' => 'Usługa głosowa jest chwilowo niedostępna. Spróbuj ponownie później.',
-            ], 503);
+        } catch (RequestException $e) {
+            $status = $e->response?->status();
+            $body = $e->response ? (string) $e->response->body() : '';
+            Log::warning('ElevenLabs TTS failed, trying OpenAI fallback', ['status' => $status, 'body' => mb_substr($body, 0, 1000)]);
+
+            // 402 = free users cannot use library voices via API -> fallback to OpenAI
+            if ($status === 402 || $status === 401 || str_contains(strtolower($body), 'payment_required') || str_contains(strtolower($body), 'paid_plan')) {
+                try {
+                    $audio = Audio::of($text)->voice('nova')->generate(provider: Lab::OpenAI);
+                } catch (\Throwable $fallback) {
+                    return response()->json([
+                        'message' => 'Usługa głosowa jest chwilowo niedostępna. Spróbuj ponownie później.',
+                    ], 503);
+                }
+            } else {
+                return response()->json([
+                    'message' => 'Usługa głosowa jest chwilowo niedostępna. Spróbuj ponownie później.',
+                ], 503);
+            }
+        } catch (AiException|ConnectionException $e) {
+            // Generic ElevenLabs failure -> try OpenAI fallback
+            try {
+                $audio = Audio::of($text)->voice('nova')->generate(provider: Lab::OpenAI);
+            } catch (\Throwable $fallback) {
+                return response()->json([
+                    'message' => 'Usługa głosowa jest chwilowo niedostępna. Spróbuj ponownie później.',
+                ], 503);
+            }
         } catch (\Throwable $e) {
             return response()->json([
                 'message' => 'Nie udało się wygenerować audio.',

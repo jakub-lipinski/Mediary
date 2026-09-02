@@ -74,7 +74,8 @@ class BloodController extends Controller
             'Usługa analizy wyników jest chwilowo niedostępna. Spróbuj ponownie później.',
         );
 
-        $data['blood_recommendations'] = $this->htmlSanitizer->sanitize($response['html'] ?? null);
+        $rawHtml = $this->normalizeBloodHtml($response['html'] ?? null);
+        $data['blood_recommendations'] = $this->htmlSanitizer->sanitize($rawHtml);
 
         if (blank($data['blood_recommendations'])) {
             throw ValidationException::withMessages([
@@ -167,5 +168,53 @@ class BloodController extends Controller
             json_encode($data, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE),
             '</untrusted_user_data>',
         ]);
+    }
+
+    private function normalizeBloodHtml(?string $html): ?string
+    {
+        if (blank($html)) {
+            return $html;
+        }
+
+        // If model mistakenly returned Markdown, convert **bold** to <b> and list markers to HTML
+        // 1. **text** -> <b>text</b>
+        $html = preg_replace('/\*\*(.+?)\*\*/u', '<b>$1</b>', $html) ?? $html;
+        // 2. __text__ -> <b>text</b>
+        $html = preg_replace('/__(.+?)__/u', '<b>$1</b>', $html) ?? $html;
+        // 3. Lines starting with "- " or "* " or "• " -> <li>
+        if (preg_match('/^\s*[-*•]\s+/m', $html) && ! str_contains($html, '<li>')) {
+            $lines = preg_split('/\r?\n/', $html);
+            $converted = [];
+            $inList = false;
+            foreach ($lines as $line) {
+                $trim = trim($line);
+                if (preg_match('/^[-*•]\s+(.*)/u', $trim, $m)) {
+                    if (! $inList) {
+                        $converted[] = '<ul>';
+                        $inList = true;
+                    }
+                    $converted[] = '<li>'.trim($m[1]).'</li>';
+                } else {
+                    if ($inList) {
+                        $converted[] = '</ul>';
+                        $inList = false;
+                    }
+                    if ($trim !== '') {
+                        // Wrap plain lines in <p> if not already HTML
+                        if (! preg_match('/^<\/?(p|ul|li|b|strong|br)/i', $trim)) {
+                            $converted[] = '<p>'.$trim.'</p>';
+                        } else {
+                            $converted[] = $line;
+                        }
+                    }
+                }
+            }
+            if ($inList) {
+                $converted[] = '</ul>';
+            }
+            $html = implode("\n", $converted);
+        }
+
+        return $html;
     }
 }
