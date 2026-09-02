@@ -532,19 +532,20 @@ const toggle = () => {
 
                 <template v-else>
                     <div v-for="(msg, idx) in messages" :key="idx" :class="['flex flex-col', msg.role === 'user' ? 'items-end' : 'items-start']">
-                        <div
-                            :class="[
-                                'max-w-[82%] rounded-2xl px-4 py-2.5 text-sm leading-6 shadow-sm',
-                                msg.role === 'user'
-                                    ? 'bg-blue-600 text-white rounded-br-sm'
-                                    : 'bg-white text-slate-800 border border-slate-200 rounded-bl-sm'
-                            ]"
-                        >
-                            <p v-if="msg.role === 'assistant'" class="whitespace-pre-wrap break-words">{{ msg.content }}<span v-if="isStreaming && idx === messages.length - 1" class="inline-block w-2 h-4 bg-blue-500 ml-1 animate-pulse translate-y-1"></span></p>
-                            <p v-else class="whitespace-pre-wrap break-words">{{ msg.content }}</p>
-                        </div>
-                        <!-- Per-message TTS button for assistant -->
-                        <div v-if="msg.role === 'assistant' && msg.content" class="mt-1 flex items-center gap-2">
+                        <template v-if="!(isStreaming && idx === messages.length - 1 && msg.role === 'assistant' && !msg.content)">
+                            <div
+                                :class="[
+                                    'max-w-[82%] rounded-2xl px-4 py-2.5 text-sm leading-6 shadow-sm',
+                                    msg.role === 'user'
+                                        ? 'bg-blue-600 text-white rounded-br-sm'
+                                        : 'bg-white text-slate-800 border border-slate-200 rounded-bl-sm'
+                                ]"
+                            >
+                                <p v-if="msg.role === 'assistant'" class="whitespace-pre-wrap break-words">{{ msg.content }}<span v-if="isStreaming && idx === messages.length - 1" class="inline-block w-2 h-4 bg-blue-500 ml-1 animate-pulse translate-y-1"></span></p>
+                                <p v-else class="whitespace-pre-wrap break-words">{{ msg.content }}</p>
+                            </div>
+                            <!-- Per-message TTS button for assistant -->
+                            <div v-if="msg.role === 'assistant' && msg.content" class="mt-1 flex items-center gap-2">
                             <button
                                 @click="speak(msg.content, idx)"
                                 :disabled="ttsLoadingIdx === idx"
@@ -566,6 +567,7 @@ const toggle = () => {
                             <span v-else-if="ttsLoadingIdx === idx" class="text-[11px] text-slate-400">Generowanie głosu...</span>
                             <span v-else class="text-[11px] text-slate-400 hidden sm:inline">Odsłuchaj</span>
                         </div>
+                        </template>
                     </div>
                     <div v-if="isStreaming && messages[messages.length-1]?.role === 'assistant' && !messages[messages.length-1].content" class="flex justify-start">
                         <div class="bg-white border border-slate-200 rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-1.5">
