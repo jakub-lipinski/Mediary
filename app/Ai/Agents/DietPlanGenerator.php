@@ -5,7 +5,6 @@ namespace App\Ai\Agents;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Attributes\Model;
-use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasStructuredOutput;
@@ -14,7 +13,6 @@ use Stringable;
 
 #[Model('gpt-5.6-luna')]
 #[MaxTokens(5000)]
-#[Temperature(0.3)]
 #[Timeout(45)]
 class DietPlanGenerator implements Agent, HasStructuredOutput
 {

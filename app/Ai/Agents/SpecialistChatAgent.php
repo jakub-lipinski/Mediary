@@ -4,7 +4,6 @@ namespace App\Ai\Agents;
 
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Attributes\Model;
-use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Concerns\RemembersConversations;
 use Laravel\Ai\Contracts\Agent;
@@ -14,7 +13,6 @@ use Stringable;
 
 #[Model('gpt-5.6-luna')]
 #[MaxTokens(1200)]
-#[Temperature(0.5)]
 #[Timeout(60)]
 class SpecialistChatAgent implements Agent, Conversational
 {

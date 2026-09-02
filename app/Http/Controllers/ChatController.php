@@ -149,17 +149,6 @@ class ChatController extends Controller
                 'body' => mb_substr($body, 0, 2000),
             ]);
 
-            // Fallback for invalid model (400) – retry with gpt-4o
-            if ($status === 400 && str_contains(strtolower($body), 'model')) {
-                try {
-                    Log::warning('Chat stream fallback to gpt-4o', ['userId' => $user->id]);
-
-                    return $agent->stream($prompt, model: 'gpt-4o');
-                } catch (\Throwable $fallback) {
-                    Log::error('Chat fallback also failed', ['error' => $fallback->getMessage()]);
-                }
-            }
-
             if ($status === 401) {
                 throw ValidationException::withMessages([
                     'message' => 'Nieprawidłowy klucz OPENAI_API_KEY (401). Sprawdź .env i limit konta.',
@@ -222,26 +211,15 @@ class ChatController extends Controller
             $body = $e->response ? (string) $e->response->body() : $e->getMessage();
             Log::error('Chat send RequestException', ['userId' => $user->id, 'status' => $status, 'body' => mb_substr($body, 0, 2000)]);
 
-            if ($status === 400 && str_contains(strtolower($body), 'model')) {
-                try {
-                    Log::warning('Chat send fallback to gpt-4o', ['userId' => $user->id]);
-                    $response = $agent->prompt($prompt, model: 'gpt-4o');
-                } catch (\Throwable $fallback) {
-                    Log::error('Chat fallback also failed', ['error' => $fallback->getMessage()]);
-
-                    throw ValidationException::withMessages([
-                        'message' => 'Usługa czatu jest chwilowo niedostępna. Spróbuj ponownie później.',
-                    ]);
-                }
-            } elseif ($status === 401) {
+            if ($status === 401) {
                 throw ValidationException::withMessages([
                     'message' => 'Nieprawidłowy klucz OPENAI_API_KEY (401). Sprawdź .env i limit konta.',
                 ]);
-            } else {
-                throw ValidationException::withMessages([
-                    'message' => 'Usługa czatu jest chwilowo niedostępna. Spróbuj ponownie później.',
-                ]);
             }
+
+            throw ValidationException::withMessages([
+                'message' => 'Usługa czatu jest chwilowo niedostępna. Spróbuj ponownie później.',
+            ]);
         } catch (AiException|ConnectionException $e) {
             Log::error('Chat send AiException', ['userId' => $user->id, 'error' => $e->getMessage()]);
 

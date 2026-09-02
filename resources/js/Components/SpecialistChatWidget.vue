@@ -479,15 +479,6 @@ const toggle = () => {
                 </div>
             </div>
 
-            <!-- Disclaimer -->
-            <div class="px-3 py-2 bg-amber-50 border-b border-amber-100 flex gap-2 items-start">
-                <i class="fa-solid fa-circle-info text-amber-500 text-[11px] mt-1 shrink-0"></i>
-                <p class="text-[11px] leading-4 text-amber-900">
-                    <span class="font-semibold">To jest asystent AI.</span>
-                    Informacje mają charakter edukacyjny i nie zastępują konsultacji ze specjalistą. W razie wątpliwości skontaktuj się z lekarzem.
-                </p>
-            </div>
-
             <!-- TTS info when enabled -->
             <div v-if="isTtsEnabled" class="px-3 py-1.5 bg-blue-50 border-b border-blue-100 flex gap-2 items-center text-[11px] text-blue-800">
                 <i class="fa-solid fa-volume-high text-blue-500 text-[11px]"></i>
