@@ -4,6 +4,7 @@ namespace App\Ai\Agents;
 
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\MaxTokens;
+use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\Timeout;
 use Laravel\Ai\Contracts\Agent;
@@ -11,6 +12,7 @@ use Laravel\Ai\Contracts\HasStructuredOutput;
 use Laravel\Ai\Promptable;
 use Stringable;
 
+#[Model('gpt-5.6-luna')]
 #[MaxTokens(80)]
 #[Temperature(0.0)]
 #[Timeout(30)]
