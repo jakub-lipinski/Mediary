@@ -2,6 +2,7 @@
 import { Link } from "@inertiajs/vue3";
 import { usePage } from "@inertiajs/vue3";
 import { computed, onMounted } from "vue";
+import SpecialistChatWidget from "@/Components/SpecialistChatWidget.vue";
 
 const page = usePage();
 
@@ -539,5 +540,6 @@ onMounted(() => {
                 </div>
             </main>
         </div>
+        <SpecialistChatWidget />
     </div>
 </template>
